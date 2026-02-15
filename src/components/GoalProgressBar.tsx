@@ -8,7 +8,7 @@ const GoalProgressBar = ({ label, value, goal }: GoalProgressBarProps) => {
   const percent = goal <= 0 ? 0 : Math.min(100, Math.round((value / goal) * 100));
 
   return (
-    <div className="rounded-xl border border-slate-200 bg-white/60 p-3 dark:border-slate-700 dark:bg-slate-900/40">
+    <div className="rounded-xl border border-slate-200 bg-[var(--card-color)]/85 p-3 dark:border-slate-700">
       <div className="flex items-center justify-between text-sm text-slate-600 dark:text-slate-300">
         <span>{label}</span>
         <span>

@@ -9,7 +9,7 @@ type ModuleLayoutWrapperProps = {
 
 const ModuleLayoutWrapper = ({ title, subtitle, actions, children }: ModuleLayoutWrapperProps) => {
   return (
-    <section className="animate-slideIn rounded-2xl border border-slate-200 bg-white/85 p-4 shadow-soft backdrop-blur-sm dark:border-slate-700 dark:bg-surface-darkCard/85">
+    <section className="animate-slideIn rounded-2xl border border-slate-200 bg-[var(--card-color)]/90 p-4 shadow-soft backdrop-blur-sm dark:border-slate-700">
       <div className="mb-4 flex flex-wrap items-start justify-between gap-3">
         <div>
           <h2 className="text-xl font-semibold text-slate-900 dark:text-slate-100">{title}</h2>

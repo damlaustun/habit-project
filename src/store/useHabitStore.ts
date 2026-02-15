@@ -7,8 +7,7 @@ import type {
   BudgetMonth,
   DayId,
   ExpenseItem,
-  HabitHistoryEventType,
-  HabitHistoryItem,
+  FontFamilyOption,
   HabitInput,
   HabitItem,
   HabitOverride,
@@ -32,9 +31,9 @@ import {
 import {
   addWeeksToId,
   compareWeekIds,
-  dayIdToIndex,
   getCurrentMonthKey,
   getCurrentWeekId,
+  getWeekDistance,
   getWeekLabelFromId,
   uid
 } from '../utils/date';
@@ -51,9 +50,8 @@ type WeeklyPlannerSlice = {
 };
 
 type HabitsSlice = {
-  recurringHabits: Record<string, RecurringHabitTemplate>;
+  recurrenceRules: Record<string, RecurringHabitTemplate>;
   habitOverrides: Record<string, HabitOverride>;
-  habitHistory: HabitHistoryItem[];
   dailyGoal: number;
   weeklyGoal: number;
   lockPastWeeks: boolean;
@@ -61,14 +59,13 @@ type HabitsSlice = {
 
 type BooksSlice = {
   entries: BookEntry[];
-  sidebarOpen: boolean;
 };
 
 type SportsSlice = {
   programs: WorkoutProgram[];
 };
 
-type WishListsSlice = {
+type ShoppingListsSlice = {
   lists: WishList[];
 };
 
@@ -84,6 +81,7 @@ type MediaListSlice = {
 type ThemeSettingsSlice = {
   mode: ThemeMode;
   colors: ThemeColors;
+  fontFamily: FontFamilyOption;
 };
 
 type CloudAppState = {
@@ -91,7 +89,7 @@ type CloudAppState = {
   habits: HabitsSlice;
   books: BooksSlice;
   sports: SportsSlice;
-  wishLists: WishListsSlice;
+  shoppingLists: ShoppingListsSlice;
   budget: BudgetSlice;
   mediaList: MediaListSlice;
   userProfile: UserProfile;
@@ -148,11 +146,11 @@ type HabitStore = CloudAppState & {
 
   setThemeMode: (mode: ThemeMode) => void;
   setThemeColor: <K extends keyof ThemeColors>(key: K, value: ThemeColors[K]) => void;
+  setFontFamily: (value: FontFamilyOption) => void;
   setDailyGoal: (value: number) => void;
   setWeeklyGoal: (value: number) => void;
   setLockPastWeeks: (enabled: boolean) => void;
 
-  toggleBooksSidebar: () => void;
   addBook: (input: {
     title: string;
     author: string;
@@ -173,10 +171,20 @@ type HabitStore = CloudAppState & {
     input: { title: string; reps?: string; durationMin?: number }
   ) => void;
   toggleWorkoutItem: (programId: string, day: DayId, itemId: string) => void;
+  updateWorkoutItem: (
+    programId: string,
+    day: DayId,
+    itemId: string,
+    patch: { title?: string; reps?: string; durationMin?: number }
+  ) => void;
+  deleteWorkoutItem: (programId: string, day: DayId, itemId: string) => void;
+  clearWorkoutDay: (programId: string, day: DayId) => void;
 
-  addWishList: (name: string) => void;
-  addWishItem: (listId: string, name: string, price?: number) => void;
-  toggleWishItem: (listId: string, itemId: string) => void;
+  addShoppingList: (name: string) => void;
+  renameShoppingList: (listId: string, name: string) => void;
+  deleteShoppingList: (listId: string) => void;
+  addShoppingItem: (listId: string, name: string, price?: number) => void;
+  toggleShoppingItem: (listId: string, itemId: string) => void;
 
   setMonthlyIncome: (monthKey: string, income: number) => void;
   addExpense: (monthKey: string, input: { name: string; amount: number; category?: string }) => void;
@@ -203,8 +211,10 @@ const defaultThemeSettings: ThemeSettingsSlice = {
   colors: {
     primaryColor: '#0f766e',
     secondaryColor: '#0ea5a3',
-    backgroundColor: '#f6f7f9'
-  }
+    backgroundColor: '#f6f7f9',
+    cardColor: '#ffffff'
+  },
+  fontFamily: 'system'
 };
 
 const defaultUserProfile: UserProfile = {
@@ -247,7 +257,12 @@ const createSampleBooks = (): BookEntry[] => [
 const createSampleWishLists = (): WishList[] => [
   {
     id: uid(),
-    name: 'Tech Wishlist',
+    name: 'Grocery List',
+    items: [{ id: uid(), name: 'Eggs', purchased: false }]
+  },
+  {
+    id: uid(),
+    name: 'Wish List',
     items: [{ id: uid(), name: 'Mechanical Keyboard', price: 120, purchased: false }]
   }
 ];
@@ -291,21 +306,19 @@ const createDefaultCloudState = (): CloudAppState => {
       }
     },
     habits: {
-      recurringHabits: {},
+      recurrenceRules: {},
       habitOverrides: {},
-      habitHistory: [],
       dailyGoal: 20,
       weeklyGoal: 100,
       lockPastWeeks: false
     },
     books: {
-      entries: createSampleBooks(),
-      sidebarOpen: true
+      entries: createSampleBooks()
     },
     sports: {
       programs: [createSampleSportsProgram()]
     },
-    wishLists: {
+    shoppingLists: {
       lists: createSampleWishLists()
     },
     budget: createDefaultBudget(),
@@ -334,7 +347,6 @@ const normalizeHabit = (habit: HabitItem): HabitItem => ({
   completedDurationMin: clampNumber(habit.completedDurationMin),
   priority: habit.priority ?? 'normal',
   completionLog: habit.completionLog ?? (habit.completedAt ? [habit.completedAt] : []),
-  isRecurringInstance: habit.isRecurringInstance ?? Boolean(habit.recurringId),
   updatedAt: habit.updatedAt ?? habit.createdAt
 });
 
@@ -373,18 +385,6 @@ const normalizeWeek = (plan: WeeklyPlan, weekId: string): WeeklyPlan => {
   };
 };
 
-const makeHistoryEvent = (
-  payload: Omit<HabitHistoryItem, 'id' | 'timestamp'> & { eventType: HabitHistoryEventType }
-): HabitHistoryItem => ({
-  id: uid(),
-  timestamp: new Date().toISOString(),
-  ...payload
-});
-
-const pushHistory = (history: HabitHistoryItem[], event: HabitHistoryItem): HabitHistoryItem[] => {
-  return [event, ...history].slice(0, 1500);
-};
-
 const getOverrideKey = (weekId: string, day: DayId, recurringId: string): string =>
   `${weekId}:${day}:${recurringId}`;
 
@@ -393,16 +393,20 @@ const shouldRecurringAppear = (
   weekId: string,
   day: DayId
 ): boolean => {
-  const cmp = compareWeekIds(weekId, recurring.startsWeekId);
-  if (cmp < 0) {
+  if (day !== recurring.weekday) {
     return false;
   }
 
-  if (cmp === 0 && dayIdToIndex(day) < dayIdToIndex(recurring.startsDayId)) {
+  const weekDistance = getWeekDistance(recurring.startsWeekId, weekId);
+  if (weekDistance < 0) {
     return false;
   }
 
-  return recurring.active;
+  if (recurring.recurrence.mode === 'forever') {
+    return true;
+  }
+
+  return weekDistance < recurring.recurrence.weeks;
 };
 
 const buildRecurringHabit = (
@@ -423,7 +427,6 @@ const buildRecurringHabit = (
     completionLog: [],
     priority: recurring.priority,
     recurringId: recurring.id,
-    isRecurringInstance: true,
     targetDurationMin: recurring.targetDurationMin,
     completedDurationMin: 0,
     createdAt: existing?.createdAt ?? recurring.createdAt,
@@ -441,7 +444,7 @@ const buildRecurringHabit = (
 
 const applyRecurringToWeek = (
   plan: WeeklyPlan,
-  recurringHabits: Record<string, RecurringHabitTemplate>,
+  recurrenceRules: Record<string, RecurringHabitTemplate>,
   habitOverrides: Record<string, HabitOverride>
 ): WeeklyPlan => {
   // Build each day from manual habits + generated recurring instances while respecting day-specific overrides.
@@ -460,12 +463,12 @@ const applyRecurringToWeek = (
       });
 
     const manualHabits = existingDay.habits.filter(
-      (habit) => !habit.recurringId || !recurringHabits[habit.recurringId]
+      (habit) => !habit.recurringId || !recurrenceRules[habit.recurringId]
     );
 
     const generatedHabits: HabitItem[] = [];
 
-    Object.values(recurringHabits).forEach((recurring) => {
+    Object.values(recurrenceRules).forEach((recurring) => {
       if (!shouldRecurringAppear(recurring, week.weekId, day)) {
         return;
       }
@@ -500,7 +503,7 @@ const ensureWeekExists = (
 ): WeeklyPlannerSlice => {
   const existing = weeklyPlanner.weeks[weekId];
   const base = existing ? normalizeWeek(existing, weekId) : createEmptyWeek(weekId);
-  const generated = applyRecurringToWeek(base, habitsSlice.recurringHabits, habitsSlice.habitOverrides);
+  const generated = applyRecurringToWeek(base, habitsSlice.recurrenceRules, habitsSlice.habitOverrides);
 
   return {
     ...weeklyPlanner,
@@ -520,7 +523,7 @@ const applyRecurringToFutureKnownWeeks = (
 
   Object.entries(nextWeeks).forEach(([weekId, week]) => {
     if (compareWeekIds(weekId, startsWeekId) >= 0) {
-      nextWeeks[weekId] = applyRecurringToWeek(week, habitsSlice.recurringHabits, habitsSlice.habitOverrides);
+      nextWeeks[weekId] = applyRecurringToWeek(week, habitsSlice.recurrenceRules, habitsSlice.habitOverrides);
     }
   });
 
@@ -585,19 +588,21 @@ const fromCloudState = (payload: Partial<CloudAppState>): CloudAppState => {
     payload.weeklyPlanner?.weeks ?? legacyWeeklyRangePayload.weeks ?? defaults.weeklyPlanner.weeks;
 
   const habitsRaw = payload.habits ??
-    ((payload as unknown as {
+    (payload as unknown as {
+      recurrenceRules?: Record<string, RecurringHabitTemplate>;
       recurringHabits?: Record<string, RecurringHabitTemplate>;
       habitOverrides?: Record<string, HabitOverride>;
-      habitHistory?: HabitHistoryItem[];
       dailyGoal?: number;
       weeklyGoal?: number;
       lockPastWeeks?: boolean;
-    }) as Partial<HabitsSlice>);
+    });
 
   const habits: HabitsSlice = {
-    recurringHabits: habitsRaw.recurringHabits ?? defaults.habits.recurringHabits,
+    recurrenceRules:
+      habitsRaw.recurrenceRules ??
+      (habitsRaw as { recurringHabits?: Record<string, RecurringHabitTemplate> }).recurringHabits ??
+      defaults.habits.recurrenceRules,
     habitOverrides: habitsRaw.habitOverrides ?? defaults.habits.habitOverrides,
-    habitHistory: habitsRaw.habitHistory ?? defaults.habits.habitHistory,
     dailyGoal: clampNumber(habitsRaw.dailyGoal ?? defaults.habits.dailyGoal),
     weeklyGoal: clampNumber(habitsRaw.weeklyGoal ?? defaults.habits.weeklyGoal),
     lockPastWeeks: habitsRaw.lockPastWeeks ?? defaults.habits.lockPastWeeks
@@ -606,7 +611,7 @@ const fromCloudState = (payload: Partial<CloudAppState>): CloudAppState => {
   const normalizedWeeks = Object.fromEntries(
     Object.entries(weeksRaw).map(([weekId, week]) => [
       weekId,
-      applyRecurringToWeek(normalizeWeek(week, weekId), habits.recurringHabits, habits.habitOverrides)
+      applyRecurringToWeek(normalizeWeek(week, weekId), habits.recurrenceRules, habits.habitOverrides)
     ])
   ) as Record<string, WeeklyPlan>;
 
@@ -622,9 +627,16 @@ const fromCloudState = (payload: Partial<CloudAppState>): CloudAppState => {
   const legacyThemePayload = payload as unknown as {
     themeMode?: ThemeMode;
     themeColors?: ThemeColors;
+    fontFamily?: FontFamilyOption;
     settings?: {
       themeSettings?: { mode?: ThemeMode };
-      colorSettings?: { primaryColor?: string; accentColor?: string; backgroundColor?: string };
+      colorSettings?: {
+        primaryColor?: string;
+        accentColor?: string;
+        secondaryColor?: string;
+        backgroundColor?: string;
+        cardColor?: string;
+      };
     };
   };
 
@@ -649,8 +661,14 @@ const fromCloudState = (payload: Partial<CloudAppState>): CloudAppState => {
         incomingTheme?.colors?.backgroundColor ??
         legacyThemePayload.themeColors?.backgroundColor ??
         legacyThemePayload.settings?.colorSettings?.backgroundColor ??
-        defaults.themeSettings.colors.backgroundColor
-    }
+        defaults.themeSettings.colors.backgroundColor,
+      cardColor:
+        incomingTheme?.colors?.cardColor ??
+        legacyThemePayload.themeColors?.cardColor ??
+        legacyThemePayload.settings?.colorSettings?.cardColor ??
+        defaults.themeSettings.colors.cardColor
+    },
+    fontFamily: incomingTheme?.fontFamily ?? legacyThemePayload.fontFamily ?? defaults.themeSettings.fontFamily
   };
 
   const budgetRaw = payload.budget ?? defaults.budget;
@@ -667,14 +685,16 @@ const fromCloudState = (payload: Partial<CloudAppState>): CloudAppState => {
     weeklyPlanner,
     habits,
     books: {
-      entries: payload.books?.entries ?? defaults.books.entries,
-      sidebarOpen: payload.books?.sidebarOpen ?? defaults.books.sidebarOpen
+      entries: payload.books?.entries ?? defaults.books.entries
     },
     sports: {
       programs: payload.sports?.programs ?? defaults.sports.programs
     },
-    wishLists: {
-      lists: payload.wishLists?.lists ?? defaults.wishLists.lists
+    shoppingLists: {
+      lists:
+        payload.shoppingLists?.lists ??
+        (payload as unknown as { wishLists?: { lists?: WishList[] } }).wishLists?.lists ??
+        defaults.shoppingLists.lists
     },
     budget,
     mediaList: {
@@ -735,7 +755,7 @@ export const useHabitStore = create<HabitStore>()(
         habits: get().habits,
         books: get().books,
         sports: get().sports,
-        wishLists: get().wishLists,
+        shoppingLists: get().shoppingLists,
         budget: get().budget,
         mediaList: get().mediaList,
         userProfile: get().userProfile,
@@ -800,7 +820,7 @@ export const useHabitStore = create<HabitStore>()(
         set((state) => {
           const weekId = state.weeklyPlanner.currentWeekId;
           const base = createEmptyWeek(weekId);
-          const week = applyRecurringToWeek(base, state.habits.recurringHabits, state.habits.habitOverrides);
+          const week = applyRecurringToWeek(base, state.habits.recurrenceRules, state.habits.habitOverrides);
 
           return {
             weeklyPlanner: {
@@ -822,55 +842,6 @@ export const useHabitStore = create<HabitStore>()(
 
           const weekId = state.weeklyPlanner.currentWeekId;
 
-          if (input.habitType === 'recurring') {
-            const recurringId = uid();
-            const recurring: RecurringHabitTemplate = {
-              id: recurringId,
-              title: input.title.trim(),
-              description: input.description?.trim(),
-              points: clampNumber(input.points),
-              priority: 'normal',
-              targetDurationMin: clampNumber(input.targetDurationMin ?? 0) || undefined,
-              createdAt: new Date().toISOString(),
-              startsWeekId: weekId,
-              startsDayId: day,
-              active: true
-            };
-
-            const habits: HabitsSlice = {
-              ...state.habits,
-              recurringHabits: {
-                ...state.habits.recurringHabits,
-                [recurringId]: recurring
-              }
-            };
-
-            const weeklyPlanner = applyRecurringToFutureKnownWeeks(state.weeklyPlanner, habits, weekId);
-            const ensured = ensureWeekExists(weeklyPlanner, habits, weekId);
-
-            const habit = ensured.weeks[weekId].days[day].habits.find((item) => item.recurringId === recurringId);
-            const habitHistory = habit
-              ? pushHistory(
-                  habits.habitHistory,
-                  makeHistoryEvent({
-                    habitId: habit.id,
-                    day,
-                    weekId,
-                    titleSnapshot: habit.title,
-                    eventType: 'generated_recurring'
-                  })
-                )
-              : habits.habitHistory;
-
-            return {
-              habits: {
-                ...habits,
-                habitHistory
-              },
-              weeklyPlanner: ensured
-            };
-          }
-
           const priority: HabitPriority = input.habitType === 'important' ? 'important' : 'normal';
           const now = new Date().toISOString();
 
@@ -884,12 +855,44 @@ export const useHabitStore = create<HabitStore>()(
             completionLog: [],
             priority,
             recurringId: undefined,
-            isRecurringInstance: false,
             targetDurationMin: clampNumber(input.targetDurationMin ?? 0) || undefined,
             completedDurationMin: 0,
             createdAt: now,
             updatedAt: now
           });
+
+          if (input.recurrence.mode !== 'this_week') {
+            const recurringId = uid();
+            const recurring: RecurringHabitTemplate = {
+              id: recurringId,
+              title: habit.title,
+              description: habit.description,
+              points: habit.points,
+              priority: habit.priority,
+              targetDurationMin: habit.targetDurationMin,
+              createdAt: now,
+              startsWeekId: weekId,
+              weekday: day,
+              recurrence:
+                input.recurrence.mode === 'weeks'
+                  ? { mode: 'weeks', weeks: Math.max(1, input.recurrence.weeks) }
+                  : { mode: 'forever' }
+            };
+
+            const habits: HabitsSlice = {
+              ...state.habits,
+              recurrenceRules: {
+                ...state.habits.recurrenceRules,
+                [recurringId]: recurring
+              }
+            };
+
+            const weeklyPlanner = applyRecurringToFutureKnownWeeks(state.weeklyPlanner, habits, weekId);
+            return {
+              habits,
+              weeklyPlanner: ensureWeekExists(weeklyPlanner, habits, weekId)
+            };
+          }
 
           const weeklyPlanner = updateWeekForCurrent(state, (week) => ({
             ...week,
@@ -903,20 +906,7 @@ export const useHabitStore = create<HabitStore>()(
           }));
 
           return {
-            weeklyPlanner,
-            habits: {
-              ...state.habits,
-              habitHistory: pushHistory(
-                state.habits.habitHistory,
-                makeHistoryEvent({
-                  habitId: habit.id,
-                  day,
-                  weekId,
-                  titleSnapshot: habit.title,
-                  eventType: 'created'
-                })
-              )
-            }
+            weeklyPlanner
           };
         }),
 
@@ -936,7 +926,6 @@ export const useHabitStore = create<HabitStore>()(
           }
 
           const now = new Date().toISOString();
-          let eventType: HabitHistoryEventType = 'updated';
           let completedAt = existing.completedAt;
           let completionLog = [...existing.completionLog];
 
@@ -944,18 +933,9 @@ export const useHabitStore = create<HabitStore>()(
             if (patch.completed) {
               completedAt = now;
               completionLog = [...completionLog, now];
-              eventType = 'completed';
             } else {
               completedAt = undefined;
-              eventType = 'uncompleted';
             }
-          }
-
-          if (
-            patch.completedDurationMin !== undefined &&
-            clampNumber(patch.completedDurationMin) !== existing.completedDurationMin
-          ) {
-            eventType = 'duration_updated';
           }
 
           const updatedHabit = normalizeHabit({
@@ -1024,17 +1004,6 @@ export const useHabitStore = create<HabitStore>()(
             };
           }
 
-          habits.habitHistory = pushHistory(
-            habits.habitHistory,
-            makeHistoryEvent({
-              habitId,
-              day,
-              weekId,
-              titleSnapshot: updatedHabit.title,
-              eventType
-            })
-          );
-
           return {
             weeklyPlanner,
             habits
@@ -1097,17 +1066,6 @@ export const useHabitStore = create<HabitStore>()(
               }
             };
           }
-
-          habits.habitHistory = pushHistory(
-            habits.habitHistory,
-            makeHistoryEvent({
-              habitId,
-              day,
-              weekId,
-              titleSnapshot: habit.title,
-              eventType: 'deleted'
-            })
-          );
 
           return {
             weeklyPlanner,
@@ -1348,6 +1306,13 @@ export const useHabitStore = create<HabitStore>()(
             }
           }
         })),
+      setFontFamily: (value) =>
+        set((state) => ({
+          themeSettings: {
+            ...state.themeSettings,
+            fontFamily: value
+          }
+        })),
       setDailyGoal: (value) =>
         set((state) => ({
           habits: {
@@ -1367,14 +1332,6 @@ export const useHabitStore = create<HabitStore>()(
           habits: {
             ...state.habits,
             lockPastWeeks: enabled
-          }
-        })),
-
-      toggleBooksSidebar: () =>
-        set((state) => ({
-          books: {
-            ...state.books,
-            sidebarOpen: !state.books.sidebarOpen
           }
         })),
       addBook: (input) =>
@@ -1517,19 +1474,98 @@ export const useHabitStore = create<HabitStore>()(
             )
           }
         })),
-
-      addWishList: (name) =>
+      updateWorkoutItem: (programId, day, itemId, patch) =>
         set((state) => ({
-          wishLists: {
-            ...state.wishLists,
-            lists: [...state.wishLists.lists, { id: uid(), name: name.trim(), items: [] }]
+          sports: {
+            ...state.sports,
+            programs: state.sports.programs.map((program) =>
+              program.id === programId
+                ? {
+                    ...program,
+                    days: {
+                      ...program.days,
+                      [day]: program.days[day].map((item) =>
+                        item.id === itemId
+                          ? {
+                              ...item,
+                              title: patch.title?.trim() || item.title,
+                              reps: patch.reps === undefined ? item.reps : patch.reps,
+                              durationMin:
+                                patch.durationMin === undefined
+                                  ? item.durationMin
+                                  : clampNumber(patch.durationMin)
+                            }
+                          : item
+                      )
+                    }
+                  }
+                : program
+            )
           }
         })),
-      addWishItem: (listId, name, price) =>
+      deleteWorkoutItem: (programId, day, itemId) =>
         set((state) => ({
-          wishLists: {
-            ...state.wishLists,
-            lists: state.wishLists.lists.map((list) =>
+          sports: {
+            ...state.sports,
+            programs: state.sports.programs.map((program) =>
+              program.id === programId
+                ? {
+                    ...program,
+                    days: {
+                      ...program.days,
+                      [day]: program.days[day].filter((item) => item.id !== itemId)
+                    }
+                  }
+                : program
+            )
+          }
+        })),
+      clearWorkoutDay: (programId, day) =>
+        set((state) => ({
+          sports: {
+            ...state.sports,
+            programs: state.sports.programs.map((program) =>
+              program.id === programId
+                ? {
+                    ...program,
+                    days: {
+                      ...program.days,
+                      [day]: []
+                    }
+                  }
+                : program
+            )
+          }
+        })),
+
+      addShoppingList: (name) =>
+        set((state) => ({
+          shoppingLists: {
+            ...state.shoppingLists,
+            lists: [...state.shoppingLists.lists, { id: uid(), name: name.trim(), items: [] }]
+          }
+        })),
+      renameShoppingList: (listId, name) =>
+        set((state) => ({
+          shoppingLists: {
+            ...state.shoppingLists,
+            lists: state.shoppingLists.lists.map((list) =>
+              list.id === listId ? { ...list, name: name.trim() || list.name } : list
+            )
+          }
+        })),
+      deleteShoppingList: (listId) =>
+        set((state) => ({
+          shoppingLists: {
+            ...state.shoppingLists,
+            lists: state.shoppingLists.lists.filter((list) => list.id !== listId)
+          }
+        })),
+      addShoppingItem: (listId, name, price) =>
+        set((state) => ({
+          shoppingLists: {
+            ...state.shoppingLists,
+            lists: state.shoppingLists.lists.map((list) =>
               list.id === listId
                 ? {
                     ...list,
@@ -1547,11 +1583,11 @@ export const useHabitStore = create<HabitStore>()(
             )
           }
         })),
-      toggleWishItem: (listId, itemId) =>
+      toggleShoppingItem: (listId, itemId) =>
         set((state) => ({
-          wishLists: {
-            ...state.wishLists,
-            lists: state.wishLists.lists.map((list) =>
+          shoppingLists: {
+            ...state.shoppingLists,
+            lists: state.shoppingLists.lists.map((list) =>
               list.id === listId
                 ? {
                     ...list,
@@ -1660,13 +1696,13 @@ export const useHabitStore = create<HabitStore>()(
     }),
     {
       name: 'habit-weekly-planner-store',
-      version: 4,
+      version: 5,
       partialize: (state) => ({
         weeklyPlanner: state.weeklyPlanner,
         habits: state.habits,
         books: state.books,
         sports: state.sports,
-        wishLists: state.wishLists,
+        shoppingLists: state.shoppingLists,
         budget: state.budget,
         mediaList: state.mediaList,
         userProfile: state.userProfile,

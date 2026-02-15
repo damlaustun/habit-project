@@ -1,3 +1,5 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Poppins:wght@400;500;600;700&family=Roboto:wght@400;500;700&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -6,6 +8,8 @@
   --primary-color: #0f766e;
   --secondary-color: #0ea5a3;
   --app-background: #f6f7f9;
+  --card-color: #ffffff;
+  --app-font-family: 'Plus Jakarta Sans', 'Segoe UI', sans-serif;
   color-scheme: light;
 }
 
@@ -19,12 +23,16 @@
 
 body {
   margin: 0;
-  font-family: 'Plus Jakarta Sans', 'Segoe UI', sans-serif;
+  font-family: var(--app-font-family);
   background:
     radial-gradient(circle at top right, color-mix(in srgb, var(--secondary-color) 24%, transparent) 0%, transparent 44%),
     radial-gradient(circle at 10% 18%, color-mix(in srgb, var(--primary-color) 16%, transparent) 0%, transparent 30%),
     var(--app-background);
   transition: background 380ms ease, color 250ms ease;
+}
+
+.surface-card {
+  background-color: var(--card-color);
 }
 
 .dark body {

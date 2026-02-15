@@ -39,7 +39,6 @@ const createHabit = (input: {
   completionLog: input.completed ? [nowIso()] : [],
   priority: input.priority ?? 'normal',
   recurringId: undefined,
-  isRecurringInstance: false,
   targetDurationMin: input.targetDurationMin,
   completedDurationMin: input.completedDurationMin ?? 0,
   createdAt: nowIso(),

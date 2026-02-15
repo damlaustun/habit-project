@@ -40,6 +40,7 @@ const WeeklyBoard = ({
       {DAY_ORDER.map((day) => (
         <DayContainer
           key={day}
+          weekId={plan.weekId}
           dayData={plan.days[day]}
           readOnly={readOnly}
           onAddHabit={onAddHabitClick}

@@ -38,7 +38,7 @@ const parseWeekId = (weekId: string): { year: number; week: number } => {
   };
 };
 
-const getDateFromWeekId = (weekId: string): Date => {
+export const getDateFromWeekId = (weekId: string): Date => {
   const { year, week } = parseWeekId(weekId);
 
   const simple = new Date(year, 0, 4 + (week - 1) * 7);
@@ -69,6 +69,12 @@ export const addWeeksToId = (weekId: string, delta: number): string => {
   const monday = getDateFromWeekId(weekId);
   monday.setDate(monday.getDate() + delta * 7);
   return getWeekIdFromDate(monday);
+};
+
+export const getWeekDistance = (fromWeekId: string, toWeekId: string): number => {
+  const from = getDateFromWeekId(fromWeekId);
+  const to = getDateFromWeekId(toWeekId);
+  return Math.round((to.getTime() - from.getTime()) / 604800000);
 };
 
 export const compareWeekIds = (a: string, b: string): number => {
@@ -108,6 +114,17 @@ export const dayIdToIndex = (dayId: DayId): number => {
   };
 
   return map[dayId];
+};
+
+export const getDateForWeekDay = (weekId: string, dayId: DayId): Date => {
+  const monday = getDateFromWeekId(weekId);
+  const date = new Date(monday);
+  date.setDate(monday.getDate() + dayIdToIndex(dayId));
+  return date;
+};
+
+export const formatMonthDay = (date: Date): string => {
+  return new Intl.DateTimeFormat(undefined, { month: 'short', day: 'numeric' }).format(date);
 };
 
 export const getCurrentMonthKey = (): string => {

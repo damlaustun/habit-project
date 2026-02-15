@@ -1,8 +1,10 @@
 import HabitSection from './HabitSection';
 import PlannerSection from './PlannerSection';
 import type { DayContainerData, DayId, HabitItem } from '../types/habit';
+import { formatMonthDay, getDateForWeekDay } from '../utils/date';
 
 type DayContainerProps = {
+  weekId: string;
   dayData: DayContainerData;
   readOnly?: boolean;
   onAddHabit: (day: DayId) => void;
@@ -25,6 +27,7 @@ type DayContainerProps = {
 };
 
 const DayContainer = ({
+  weekId,
   dayData,
   readOnly,
   onAddHabit,
@@ -36,9 +39,11 @@ const DayContainer = ({
   onTogglePlannerItem,
   onDeletePlannerItem
 }: DayContainerProps) => {
+  const dayLabel = `${dayData.label} — ${formatMonthDay(getDateForWeekDay(weekId, dayData.day))}`;
+
   return (
-    <article className="rounded-2xl border border-slate-200 bg-white/85 p-4 shadow-soft backdrop-blur-sm dark:border-slate-700 dark:bg-surface-darkCard/85">
-      <h3 className="mb-3 text-lg font-semibold text-slate-900 dark:text-slate-100">{dayData.label}</h3>
+    <article className="rounded-2xl border border-slate-200 bg-[var(--card-color)]/95 p-4 shadow-soft backdrop-blur-sm dark:border-slate-700">
+      <h3 className="mb-3 text-lg font-semibold text-slate-900 dark:text-slate-100">{dayLabel}</h3>
 
       <div className="grid gap-3 lg:grid-cols-2">
         <HabitSection

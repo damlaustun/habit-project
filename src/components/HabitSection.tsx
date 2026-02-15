@@ -32,7 +32,7 @@ const HabitSection = ({
   onUpdateDuration
 }: HabitSectionProps) => {
   return (
-    <section className="rounded-xl border border-slate-200 bg-white p-3 dark:border-slate-700 dark:bg-slate-900/40">
+    <section className="rounded-xl border border-slate-200 bg-[var(--card-color)] p-3 dark:border-slate-700">
       <div className="mb-3 flex items-center justify-between">
         <h4 className="text-sm font-semibold text-slate-800 dark:text-slate-100">Daily Habits</h4>
         <button

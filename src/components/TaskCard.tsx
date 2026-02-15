@@ -3,7 +3,6 @@ import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import clsx from 'clsx';
 import DurationEditor from './DurationEditor';
-import HabitOverrideEditor from './HabitOverrideEditor';
 import PriorityIndicator from './PriorityIndicator';
 import type { DayId, HabitPriority, Task } from '../types/habit';
 
@@ -83,14 +82,14 @@ const TaskCard = ({
     setEditing(false);
   };
 
-  const isOverride = Boolean(task.recurringId && task.updatedAt !== task.createdAt);
+  const hasDuration = Boolean((task.targetDurationMin ?? 0) > 0 || task.completedDurationMin > 0);
 
   return (
     <article
       ref={setNodeRef}
       style={style}
       className={clsx(
-        'animate-popIn rounded-xl border bg-white p-3 shadow-sm transition-all duration-200 dark:bg-slate-900/70',
+        'animate-popIn rounded-xl border bg-[var(--card-color)] p-3 shadow-sm transition-all duration-200',
         task.priority === 'important'
           ? 'border-[var(--secondary-color)]/70 bg-[var(--secondary-color)]/10 dark:border-[var(--secondary-color)]/70'
           : 'border-slate-200 dark:border-slate-700',
@@ -192,14 +191,14 @@ const TaskCard = ({
                 <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">{task.description}</p>
               ) : null}
 
-              <DurationEditor
-                targetDurationMin={task.targetDurationMin}
-                completedDurationMin={task.completedDurationMin}
-                readOnly={readOnly}
-                onChange={(value) => onUpdateDuration(day, task.id, value)}
-              />
-
-              <HabitOverrideEditor isRecurring={task.isRecurringInstance} isOverride={isOverride} />
+              {hasDuration ? (
+                <DurationEditor
+                  targetDurationMin={task.targetDurationMin}
+                  completedDurationMin={task.completedDurationMin}
+                  readOnly={readOnly}
+                  onChange={(value) => onUpdateDuration(day, task.id, value)}
+                />
+              ) : null}
 
               <p className="mt-2 text-xs font-semibold uppercase tracking-wide text-[var(--primary-color)]">
                 {task.points} pts

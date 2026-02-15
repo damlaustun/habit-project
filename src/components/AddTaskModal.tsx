@@ -1,6 +1,5 @@
 import { useEffect, useState, type FormEvent } from 'react';
-import RecurringHabitToggle from './RecurringHabitToggle';
-import type { DayId, HabitType, TaskInput } from '../types/habit';
+import type { DayId, HabitType, RecurrenceMode, TaskInput } from '../types/habit';
 
 type AddTaskModalProps = {
   day: DayId | null;
@@ -14,6 +13,8 @@ const AddTaskModal = ({ day, onClose, onSubmit, disabled }: AddTaskModalProps) =
   const [description, setDescription] = useState('');
   const [points, setPoints] = useState(5);
   const [habitType, setHabitType] = useState<HabitType>('normal');
+  const [recurrenceMode, setRecurrenceMode] = useState<RecurrenceMode>('this_week');
+  const [repeatWeeks, setRepeatWeeks] = useState(4);
   const [targetDurationMin, setTargetDurationMin] = useState(0);
 
   useEffect(() => {
@@ -22,6 +23,8 @@ const AddTaskModal = ({ day, onClose, onSubmit, disabled }: AddTaskModalProps) =
       setDescription('');
       setPoints(5);
       setHabitType('normal');
+      setRecurrenceMode('this_week');
+      setRepeatWeeks(4);
       setTargetDurationMin(0);
     }
   }, [day]);
@@ -38,12 +41,20 @@ const AddTaskModal = ({ day, onClose, onSubmit, disabled }: AddTaskModalProps) =
       return;
     }
 
+    const recurrence =
+      recurrenceMode === 'this_week'
+        ? { mode: 'this_week' as const }
+        : recurrenceMode === 'weeks'
+          ? { mode: 'weeks' as const, weeks: Math.max(1, Math.round(repeatWeeks)) }
+          : { mode: 'forever' as const };
+
     onSubmit(day, {
       title: normalizedTitle,
       description,
       points,
       habitType,
-      targetDurationMin
+      targetDurationMin,
+      recurrence
     });
 
     onClose();
@@ -107,8 +118,61 @@ const AddTaskModal = ({ day, onClose, onSubmit, disabled }: AddTaskModalProps) =
           </div>
 
           <div>
-            <span className="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-200">Habit Type</span>
-            <RecurringHabitToggle value={habitType} onChange={setHabitType} />
+            <span className="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-200">Priority</span>
+            <div className="flex flex-wrap gap-2">
+              <button
+                type="button"
+                onClick={() => setHabitType('normal')}
+                className={`rounded-lg border px-3 py-1.5 text-sm ${
+                  habitType === 'normal'
+                    ? 'border-[var(--secondary-color)] bg-[var(--secondary-color)] text-white'
+                    : 'border-slate-300 text-slate-700 dark:border-slate-600 dark:text-slate-200'
+                }`}
+              >
+                Normal
+              </button>
+              <button
+                type="button"
+                onClick={() => setHabitType('important')}
+                className={`rounded-lg border px-3 py-1.5 text-sm ${
+                  habitType === 'important'
+                    ? 'border-[var(--secondary-color)] bg-[var(--secondary-color)] text-white'
+                    : 'border-slate-300 text-slate-700 dark:border-slate-600 dark:text-slate-200'
+                }`}
+              >
+                !
+              </button>
+            </div>
+          </div>
+
+          <div className="grid gap-3 sm:grid-cols-2">
+            <label className="block">
+              <span className="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-200">Recurrence</span>
+              <select
+                value={recurrenceMode}
+                onChange={(event) => setRecurrenceMode(event.target.value as RecurrenceMode)}
+                className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm dark:border-slate-600 dark:bg-slate-900"
+              >
+                <option value="this_week">This week only</option>
+                <option value="weeks">Repeat for X weeks</option>
+                <option value="forever">Repeat indefinitely</option>
+              </select>
+            </label>
+
+            {recurrenceMode === 'weeks' ? (
+              <label className="block">
+                <span className="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-200">Weeks</span>
+                <input
+                  type="number"
+                  min={1}
+                  value={repeatWeeks}
+                  onChange={(event) => setRepeatWeeks(Number(event.target.value))}
+                  className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm dark:border-slate-600 dark:bg-slate-900"
+                />
+              </label>
+            ) : (
+              <div />
+            )}
           </div>
 
           <div className="flex justify-end gap-2 pt-1">

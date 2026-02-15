@@ -4,7 +4,21 @@ export type DayId = (typeof DAY_ORDER)[number];
 
 export type HabitPriority = 'normal' | 'important';
 
-export type HabitType = 'normal' | 'important' | 'recurring';
+export type HabitType = 'normal' | 'important';
+
+export type RecurrenceMode = 'this_week' | 'weeks' | 'forever';
+
+export type RecurrenceInput =
+  | {
+      mode: 'this_week';
+    }
+  | {
+      mode: 'weeks';
+      weeks: number;
+    }
+  | {
+      mode: 'forever';
+    };
 
 export type HabitItem = {
   id: string;
@@ -16,7 +30,6 @@ export type HabitItem = {
   completionLog: string[];
   priority: HabitPriority;
   recurringId?: string;
-  isRecurringInstance: boolean;
   targetDurationMin?: number;
   completedDurationMin: number;
   createdAt: string;
@@ -58,8 +71,8 @@ export type RecurringHabitTemplate = {
   targetDurationMin?: number;
   createdAt: string;
   startsWeekId: string;
-  startsDayId: DayId;
-  active: boolean;
+  weekday: DayId;
+  recurrence: Exclude<RecurrenceInput, { mode: 'this_week' }>;
 };
 
 export type HabitOverride = {
@@ -84,31 +97,13 @@ export type HabitOverride = {
   updatedAt: string;
 };
 
-export type HabitHistoryEventType =
-  | 'created'
-  | 'completed'
-  | 'uncompleted'
-  | 'duration_updated'
-  | 'updated'
-  | 'deleted'
-  | 'generated_recurring';
-
-export type HabitHistoryItem = {
-  id: string;
-  habitId: string;
-  weekId: string;
-  day: DayId;
-  titleSnapshot: string;
-  eventType: HabitHistoryEventType;
-  timestamp: string;
-};
-
 export type HabitInput = {
   title: string;
   description?: string;
   points: number;
   habitType: HabitType;
   targetDurationMin?: number;
+  recurrence: RecurrenceInput;
 };
 
 export type PlannerInput = {
@@ -192,7 +187,10 @@ export type ThemeColors = {
   primaryColor: string;
   secondaryColor: string;
   backgroundColor: string;
+  cardColor: string;
 };
+
+export type FontFamilyOption = 'system' | 'inter' | 'poppins' | 'roboto';
 
 export type UserProfile = {
   name: string;

@@ -22,14 +22,14 @@ const WeekRangeHeader = ({
           <button
             type="button"
             onClick={onPrevious}
-            className="rounded-md border border-slate-300 px-3 py-1.5 text-sm text-slate-700 dark:border-slate-600 dark:text-slate-200"
+            className="relative z-10 rounded-md border border-slate-300 px-3 py-1.5 text-sm text-slate-700 dark:border-slate-600 dark:text-slate-200"
           >
             Previous Week
           </button>
           <button
             type="button"
             onClick={onNext}
-            className="rounded-md border border-slate-300 px-3 py-1.5 text-sm text-slate-700 dark:border-slate-600 dark:text-slate-200"
+            className="relative z-10 rounded-md border border-slate-300 px-3 py-1.5 text-sm text-slate-700 dark:border-slate-600 dark:text-slate-200"
           >
             Next Week
           </button>

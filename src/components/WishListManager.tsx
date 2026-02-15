@@ -4,11 +4,20 @@ import type { WishList } from '../types/habit';
 type WishListManagerProps = {
   lists: WishList[];
   onAddList: (name: string) => void;
+  onRenameList: (listId: string, name: string) => void;
+  onDeleteList: (listId: string) => void;
   onAddItem: (listId: string, name: string, price?: number) => void;
   onToggleItem: (listId: string, itemId: string) => void;
 };
 
-const WishListManager = ({ lists, onAddList, onAddItem, onToggleItem }: WishListManagerProps) => {
+const WishListManager = ({
+  lists,
+  onAddList,
+  onRenameList,
+  onDeleteList,
+  onAddItem,
+  onToggleItem
+}: WishListManagerProps) => {
   const [listName, setListName] = useState('');
 
   return (
@@ -25,7 +34,7 @@ const WishListManager = ({ lists, onAddList, onAddItem, onToggleItem }: WishList
         <input
           value={listName}
           onChange={(event) => setListName(event.target.value)}
-          placeholder="New wish list"
+          placeholder="New shopping list"
           className="flex-1 rounded-md border border-slate-300 px-3 py-2 text-sm dark:border-slate-600 dark:bg-slate-900"
         />
         <button type="submit" className="rounded-md px-3 py-2 text-sm font-semibold text-white" style={{ backgroundColor: 'var(--primary-color)' }}>
@@ -38,18 +47,38 @@ const WishListManager = ({ lists, onAddList, onAddItem, onToggleItem }: WishList
           <article key={list.id} className="rounded-xl border border-slate-200 p-3 dark:border-slate-700">
             <div className="mb-2 flex items-center justify-between">
               <h3 className="font-semibold text-slate-800 dark:text-slate-100">{list.name}</h3>
-              <button
-                type="button"
-                onClick={() => {
-                  const name = window.prompt('Item name');
-                  if (!name) return;
-                  const price = window.prompt('Price (optional)', '');
-                  onAddItem(list.id, name, price ? Number(price) : undefined);
-                }}
-                className="rounded border border-slate-300 px-2 py-1 text-xs dark:border-slate-600"
-              >
-                + Item
-              </button>
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    const name = window.prompt('Rename list', list.name);
+                    if (!name) return;
+                    onRenameList(list.id, name);
+                  }}
+                  className="rounded border border-slate-300 px-2 py-1 text-xs dark:border-slate-600"
+                >
+                  Rename
+                </button>
+                <button
+                  type="button"
+                  onClick={() => onDeleteList(list.id)}
+                  className="rounded border border-rose-300 px-2 py-1 text-xs text-rose-700 dark:border-rose-700 dark:text-rose-300"
+                >
+                  Delete
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    const name = window.prompt('Item name');
+                    if (!name) return;
+                    const price = window.prompt('Price (optional)', '');
+                    onAddItem(list.id, name, price ? Number(price) : undefined);
+                  }}
+                  className="rounded border border-slate-300 px-2 py-1 text-xs dark:border-slate-600"
+                >
+                  + Item
+                </button>
+              </div>
             </div>
 
             <div className="space-y-1">

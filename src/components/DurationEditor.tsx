@@ -19,6 +19,10 @@ const DurationEditor = ({
     setValue(completedDurationMin);
   }, [completedDurationMin]);
 
+  if ((targetDurationMin ?? 0) <= 0 && completedDurationMin <= 0) {
+    return null;
+  }
+
   const target = targetDurationMin ?? 0;
   const progress = target > 0 ? Math.min(100, Math.round((completedDurationMin / target) * 100)) : 0;
 

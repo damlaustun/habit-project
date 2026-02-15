@@ -1,16 +1,18 @@
 import ThemeCustomizer from './ThemeCustomizer';
-import type { ThemeColors, ThemeMode } from '../types/habit';
+import type { FontFamilyOption, ThemeColors, ThemeMode } from '../types/habit';
 
 type SettingsPanelProps = {
   open: boolean;
   themeMode: ThemeMode;
   themeColors: ThemeColors;
+  fontFamily: FontFamilyOption;
   dailyGoal: number;
   weeklyGoal: number;
   lockPastWeeks: boolean;
   onClose: () => void;
   onThemeModeChange: (mode: ThemeMode) => void;
   onThemeColorChange: <K extends keyof ThemeColors>(key: K, value: ThemeColors[K]) => void;
+  onFontFamilyChange: (value: FontFamilyOption) => void;
   onDailyGoalChange: (value: number) => void;
   onWeeklyGoalChange: (value: number) => void;
   onLockPastWeeksChange: (value: boolean) => void;
@@ -20,12 +22,14 @@ const SettingsPanel = ({
   open,
   themeMode,
   themeColors,
+  fontFamily,
   dailyGoal,
   weeklyGoal,
   lockPastWeeks,
   onClose,
   onThemeModeChange,
   onThemeColorChange,
+  onFontFamilyChange,
   onDailyGoalChange,
   onWeeklyGoalChange,
   onLockPastWeeksChange
@@ -56,8 +60,10 @@ const SettingsPanel = ({
             <ThemeCustomizer
               mode={themeMode}
               colors={themeColors}
+              fontFamily={fontFamily}
               onModeChange={onThemeModeChange}
               onColorChange={onThemeColorChange}
+              onFontFamilyChange={onFontFamilyChange}
             />
           </section>
 

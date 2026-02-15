@@ -6,7 +6,7 @@ type StatsBarProps = {
 
 const StatsBar = ({ completed, total, percent }: StatsBarProps) => {
   return (
-    <section className="rounded-xl border border-slate-200 bg-white px-4 py-3 dark:border-slate-700 dark:bg-surface-darkCard">
+    <section className="rounded-xl border border-slate-200 bg-[var(--card-color)] px-4 py-3 dark:border-slate-700">
       <div className="flex items-center justify-between text-sm text-slate-600 dark:text-slate-300">
         <span>Weekly completion</span>
         <span>

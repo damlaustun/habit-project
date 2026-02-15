@@ -17,35 +17,38 @@ Existing React + TypeScript + Tailwind app extended into a modular personal prod
     - `Daily Habits`
     - `Weekly Planner / Agenda`
 - `Books`
-  - Collapsible sidebar panel
-  - Book metadata, pages logging, progress, on-track check
+  - Route-based pages: `/books` and `/books/:id`
+  - Book list + dedicated detail page
+  - Page logging, notes, quotes, progress, on-track check
 - `Sports`
   - Workout programs by day
-  - Exercise completion tracking
-- `Wish List`
-  - Multiple lists + item purchase status + optional price
+  - Exercise completion + edit + delete + clear day
+- `Shopping Lists`
+  - Default lists: Grocery List, Wish List
+  - Add / rename / delete lists + item purchase status + optional price
 - `Budget`
   - Monthly income/expenses, remaining balance, savings
 - `Watch/Read Later`
   - Movies / TV / books list with completion status
 - `Settings`
-  - Theme mode + primary/secondary/background color system
+  - Theme mode + primary/secondary/background/card color
+  - Global font family selection
 
 ## Habit System Features
 
-- Habit types: `Normal`, `! (Important)`, `Recurring`
-- Recurring habits:
-  - Auto-fill remaining days of current week
-  - Auto-generate in future weeks
-  - Day-level overrides preserved
+- Habit priority: `Normal`, `! (Important)`
+- Recurrence rules at creation:
+  - `This week only`
+  - `Repeat for X weeks`
+  - `Repeat indefinitely`
+- Recurrence applies silently (no recurring badge in cards)
 - Important habits:
   - Sorted to top
   - Minimal `!` indicator only
 - Duration tracking:
   - Target duration
   - Completed duration (inline)
-- Habit history:
-  - Created / completed / updated / deleted events with timestamps
+- Duration UI renders only when duration data exists
 
 ## Store Architecture
 
@@ -55,7 +58,7 @@ The global Zustand store is split into scalable slices:
 - `weeklyPlanner`
 - `books`
 - `sports`
-- `wishLists`
+- `shoppingLists`
 - `budget`
 - `mediaList`
 - `userProfile`

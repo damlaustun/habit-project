@@ -2,14 +2,14 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import type { User } from '@supabase/supabase-js';
 import AddTaskModal from './components/AddTaskModal';
 import AuthForm from './components/AuthForm';
-import BookSidebarPanel from './components/BookSidebarPanel';
+import BookDetailPage from './components/BookDetailPage';
+import BooksPage from './components/BooksPage';
 import BudgetDashboard from './components/BudgetDashboard';
-import HabitHistoryView from './components/HabitHistoryView';
 import MediaCollection from './components/MediaCollection';
 import ModuleLayoutWrapper from './components/ModuleLayoutWrapper';
 import PointsHeader from './components/PointsHeader';
 import SettingsPanel from './components/SettingsPanel';
-import SidebarNavigation, { type AppTab } from './components/SidebarNavigation';
+import SidebarNavigation from './components/SidebarNavigation';
 import StatsBar from './components/StatsBar';
 import UserProfilePanel from './components/UserProfilePanel';
 import WeekRangeHeader from './components/WeekRangeHeader';
@@ -18,9 +18,22 @@ import WishListManager from './components/WishListManager';
 import WorkoutPlanner from './components/WorkoutPlanner';
 import { isSupabaseConfigured, supabase } from './lib/supabase';
 import { getCloudStateWeekLabel, useHabitStore } from './store/useHabitStore';
-import type { UserProfile } from './types/habit';
+import type { FontFamilyOption, UserProfile } from './types/habit';
 import { getCurrentMonthKey, getCurrentWeekId, getTodayDayId } from './utils/date';
-import { getBookProgress, getCompletedPointsForDay, getTaskCounts, getTotalCompletedPoints } from './utils/stats';
+import { getCompletedPointsForDay, getTaskCounts, getTotalCompletedPoints } from './utils/stats';
+
+const getFontStack = (font: FontFamilyOption): string => {
+  switch (font) {
+    case 'inter':
+      return "'Inter', 'Segoe UI', sans-serif";
+    case 'poppins':
+      return "'Poppins', 'Segoe UI', sans-serif";
+    case 'roboto':
+      return "'Roboto', 'Segoe UI', sans-serif";
+    default:
+      return "system-ui, -apple-system, 'Segoe UI', sans-serif";
+  }
+};
 
 const App = () => {
   const [activeDayForModal, setActiveDayForModal] = useState<import('./types/habit').DayId | null>(null);
@@ -30,7 +43,7 @@ const App = () => {
   const [authError, setAuthError] = useState<string | null>(null);
   const [authNotice, setAuthNotice] = useState<string | null>(null);
   const [syncStatus, setSyncStatus] = useState('Idle');
-  const [activeTab, setActiveTab] = useState<AppTab>('dashboard');
+  const [currentPath, setCurrentPath] = useState(() => window.location.pathname || '/');
 
   const cloudHydratedRef = useRef(false);
 
@@ -39,7 +52,7 @@ const App = () => {
     habits,
     books,
     sports,
-    wishLists,
+    shoppingLists,
     budget,
     mediaList,
     themeSettings,
@@ -72,11 +85,11 @@ const App = () => {
 
     setThemeMode,
     setThemeColor,
+    setFontFamily,
     setDailyGoal,
     setWeeklyGoal,
     setLockPastWeeks,
 
-    toggleBooksSidebar,
     addBook,
     logBookPages,
     updateBookNotes,
@@ -85,10 +98,15 @@ const App = () => {
     addWorkoutProgram,
     addWorkoutItem,
     toggleWorkoutItem,
+    updateWorkoutItem,
+    deleteWorkoutItem,
+    clearWorkoutDay,
 
-    addWishList,
-    addWishItem,
-    toggleWishItem,
+    addShoppingList,
+    renameShoppingList,
+    deleteShoppingList,
+    addShoppingItem,
+    toggleShoppingItem,
 
     setMonthlyIncome,
     addExpense,
@@ -108,28 +126,52 @@ const App = () => {
   const readOnly = isCurrentWeekReadOnly();
 
   const currentBudgetMonth = budget.months[budget.currentMonthKey] ?? budget.months[getCurrentMonthKey()];
+  const selectedBookId = currentPath.startsWith('/books/') ? decodeURIComponent(currentPath.slice('/books/'.length)) : null;
+  const selectedBook = selectedBookId ? books.entries.find((book) => book.id === selectedBookId) : null;
+  const displayPath =
+    currentPath === '/' ||
+    currentPath === '/books' ||
+    currentPath === '/sports' ||
+    currentPath === '/shopping' ||
+    currentPath === '/budget' ||
+    currentPath === '/media' ||
+    currentPath.startsWith('/books/')
+      ? currentPath
+      : '/';
 
   const cloudStatePayload = useMemo(
     () => exportCloudState(),
-    [
-      exportCloudState,
-      weeklyPlanner,
-      habits,
-      books,
-      sports,
-      wishLists,
-      budget,
-      mediaList,
-      userProfile,
-      themeSettings
-    ]
+    [exportCloudState, weeklyPlanner, habits, books, sports, shoppingLists, budget, mediaList, userProfile, themeSettings]
   );
+
+  const navigate = (path: string) => {
+    if (window.location.pathname === path) {
+      setCurrentPath(path);
+      return;
+    }
+    window.history.pushState({}, '', path);
+    setCurrentPath(path);
+  };
+
+  useEffect(() => {
+    const onPopState = () => setCurrentPath(window.location.pathname || '/');
+    window.addEventListener('popstate', onPopState);
+    return () => window.removeEventListener('popstate', onPopState);
+  }, []);
+
+  useEffect(() => {
+    if (currentPath === '/wishlists') {
+      navigate('/shopping');
+    }
+  }, [currentPath]);
 
   useEffect(() => {
     const root = document.documentElement;
     root.style.setProperty('--primary-color', themeSettings.colors.primaryColor);
     root.style.setProperty('--secondary-color', themeSettings.colors.secondaryColor);
     root.style.setProperty('--app-background', themeSettings.colors.backgroundColor);
+    root.style.setProperty('--card-color', themeSettings.colors.cardColor);
+    root.style.setProperty('--app-font-family', getFontStack(themeSettings.fontFamily));
 
     if (themeSettings.mode === 'system') {
       const media = window.matchMedia('(prefers-color-scheme: dark)');
@@ -181,11 +223,7 @@ const App = () => {
       return;
     }
 
-    if (data?.id) {
-      setCloudRowId(data.id);
-    } else {
-      setCloudRowId(null);
-    }
+    setCloudRowId(data?.id ?? null);
 
     if (data?.data) {
       importCloudState(data.data as Partial<typeof cloudStatePayload>);
@@ -302,13 +340,11 @@ const App = () => {
     setAuthNotice(null);
 
     const { error } = await supabase.auth.signInWithPassword({ email, password });
-
     if (error) {
       setAuthError(error.message);
     } else {
       setAuthNotice('Logged in');
     }
-
     setAuthBusy(false);
   };
 
@@ -386,7 +422,7 @@ const App = () => {
   return (
     <main className="min-h-screen bg-[var(--app-background)] px-4 py-6 text-slate-900 transition-all duration-500 dark:text-slate-100 sm:px-6 lg:px-8">
       <div className="mx-auto flex w-full max-w-[1700px] flex-col gap-4 lg:flex-row">
-        <SidebarNavigation activeTab={activeTab} onChangeTab={setActiveTab} />
+        <SidebarNavigation currentPath={displayPath} onNavigate={navigate} />
 
         <div className="min-w-0 flex-1 space-y-4">
           <PointsHeader
@@ -403,13 +439,11 @@ const App = () => {
             onLogout={() => void handleLogout()}
           />
 
-          {activeTab === 'dashboard' ? (
+          {displayPath === '/' ? (
             <ModuleLayoutWrapper
               title="Dashboard"
               subtitle="Daily habits and weekly agenda, organized day by day"
-              actions={
-                <span className="text-xs text-slate-500">Sync: {syncStatus}</span>
-              }
+              actions={<span className="text-xs text-slate-500">Sync: {syncStatus}</span>}
             >
               <div className="space-y-3">
                 <WeekRangeHeader
@@ -449,67 +483,70 @@ const App = () => {
                   onTogglePlannerItem={togglePlannerItem}
                   onDeletePlannerItem={deletePlannerItem}
                 />
-
-                <HabitHistoryView events={habits.habitHistory} />
               </div>
             </ModuleLayoutWrapper>
           ) : null}
 
-          {activeTab === 'books' ? (
-            <ModuleLayoutWrapper
-              title="Books"
-              subtitle="Track reading, pages, progress, and notes"
-              actions={
-                <button
-                  type="button"
-                  onClick={toggleBooksSidebar}
-                  className="rounded-md px-3 py-1.5 text-sm font-medium text-white"
-                  style={{ backgroundColor: 'var(--secondary-color)' }}
-                >
-                  {books.sidebarOpen ? 'Hide Sidebar' : 'Open Sidebar'}
-                </button>
-              }
-            >
-              <div className="grid gap-3 md:grid-cols-2">
-                {books.entries.map((book) => {
-                  const progress = getBookProgress(book);
-                  return (
-                    <article key={book.id} className="rounded-xl border border-slate-200 p-3 dark:border-slate-700">
-                      <p className="font-semibold text-slate-800 dark:text-slate-100">{book.title}</p>
-                      <p className="text-xs text-slate-500">{book.author}</p>
-                      <p className="mt-2 text-xs text-slate-500">
-                        {progress.percent}% • {progress.remaining} pages left • {progress.onTrack ? 'On track' : 'Behind'}
-                      </p>
-                    </article>
-                  );
-                })}
-              </div>
+          {displayPath === '/books' ? (
+            <ModuleLayoutWrapper title="Books" subtitle="Reading plans and progress">
+              <BooksPage
+                books={books.entries}
+                onAddBook={addBook}
+                onOpenBook={(bookId) => navigate(`/books/${encodeURIComponent(bookId)}`)}
+              />
             </ModuleLayoutWrapper>
           ) : null}
 
-          {activeTab === 'sports' ? (
+          {selectedBook ? (
+            <ModuleLayoutWrapper title="Book Detail" subtitle="Progress, notes, quotes, and page logs">
+              <BookDetailPage
+                book={selectedBook}
+                onBack={() => navigate('/books')}
+                onLogPages={logBookPages}
+                onUpdateNotes={updateBookNotes}
+                onAddQuote={addBookQuote}
+              />
+            </ModuleLayoutWrapper>
+          ) : displayPath.startsWith('/books/') ? (
+            <ModuleLayoutWrapper title="Book Detail" subtitle="This book could not be found">
+              <button
+                type="button"
+                onClick={() => navigate('/books')}
+                className="rounded border border-slate-300 px-3 py-2 text-sm dark:border-slate-600"
+              >
+                Back to books
+              </button>
+            </ModuleLayoutWrapper>
+          ) : null}
+
+          {displayPath === '/sports' ? (
             <ModuleLayoutWrapper title="Sports" subtitle="Plan workout programs by day and track completion">
               <WorkoutPlanner
                 programs={sports.programs}
                 onAddProgram={addWorkoutProgram}
                 onAddWorkoutItem={addWorkoutItem}
                 onToggleWorkoutItem={toggleWorkoutItem}
+                onUpdateWorkoutItem={updateWorkoutItem}
+                onDeleteWorkoutItem={deleteWorkoutItem}
+                onClearWorkoutDay={clearWorkoutDay}
               />
             </ModuleLayoutWrapper>
           ) : null}
 
-          {activeTab === 'wishlists' ? (
-            <ModuleLayoutWrapper title="Wish Lists" subtitle="Groceries, big purchases, and tech wishlist">
+          {displayPath === '/shopping' ? (
+            <ModuleLayoutWrapper title="Shopping Lists" subtitle="Groceries and purchase tracking">
               <WishListManager
-                lists={wishLists.lists}
-                onAddList={addWishList}
-                onAddItem={addWishItem}
-                onToggleItem={toggleWishItem}
+                lists={shoppingLists.lists}
+                onAddList={addShoppingList}
+                onRenameList={renameShoppingList}
+                onDeleteList={deleteShoppingList}
+                onAddItem={addShoppingItem}
+                onToggleItem={toggleShoppingItem}
               />
             </ModuleLayoutWrapper>
           ) : null}
 
-          {activeTab === 'budget' ? (
+          {displayPath === '/budget' ? (
             <ModuleLayoutWrapper title="Budget" subtitle="Track income, expenses, and remaining balance">
               {currentBudgetMonth ? (
                 <BudgetDashboard
@@ -522,7 +559,7 @@ const App = () => {
             </ModuleLayoutWrapper>
           ) : null}
 
-          {activeTab === 'media' ? (
+          {displayPath === '/media' ? (
             <ModuleLayoutWrapper title="Watch / Read Later" subtitle="Movies, TV shows, and books to consume later">
               <MediaCollection
                 items={mediaList.items}
@@ -532,36 +569,8 @@ const App = () => {
               />
             </ModuleLayoutWrapper>
           ) : null}
-
-          {activeTab === 'settings' ? (
-            <ModuleLayoutWrapper title="Settings" subtitle="Theme, colors, and goal preferences">
-              <div className="space-y-3">
-                <button
-                  type="button"
-                  onClick={() => setSettingsOpen(true)}
-                  className="rounded-md px-3 py-2 text-sm font-semibold text-white"
-                  style={{ backgroundColor: 'var(--primary-color)' }}
-                >
-                  Open Settings Panel
-                </button>
-                <p className="text-xs text-slate-500">
-                  Theme mode: {themeSettings.mode} • Daily goal: {habits.dailyGoal} • Weekly goal: {habits.weeklyGoal}
-                </p>
-              </div>
-            </ModuleLayoutWrapper>
-          ) : null}
         </div>
       </div>
-
-      <BookSidebarPanel
-        open={books.sidebarOpen && activeTab === 'books'}
-        books={books.entries}
-        onToggleOpen={toggleBooksSidebar}
-        onAddBook={addBook}
-        onLogPages={logBookPages}
-        onUpdateNotes={updateBookNotes}
-        onAddQuote={addBookQuote}
-      />
 
       <AddTaskModal
         day={activeDayForModal}
@@ -574,12 +583,14 @@ const App = () => {
         open={settingsOpen}
         themeMode={themeSettings.mode}
         themeColors={themeSettings.colors}
+        fontFamily={themeSettings.fontFamily}
         dailyGoal={habits.dailyGoal}
         weeklyGoal={habits.weeklyGoal}
         lockPastWeeks={habits.lockPastWeeks}
         onClose={() => setSettingsOpen(false)}
         onThemeModeChange={setThemeMode}
         onThemeColorChange={setThemeColor}
+        onFontFamilyChange={setFontFamily}
         onDailyGoalChange={setDailyGoal}
         onWeeklyGoalChange={setWeeklyGoal}
         onLockPastWeeksChange={setLockPastWeeks}

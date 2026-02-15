@@ -22,7 +22,7 @@ const PlannerSection = ({
   const [eventTime, setEventTime] = useState('');
 
   return (
-    <section className="rounded-xl border border-slate-200 bg-white p-3 dark:border-slate-700 dark:bg-slate-900/40">
+    <section className="rounded-xl border border-slate-200 bg-[var(--card-color)] p-3 dark:border-slate-700">
       <h4 className="mb-3 text-sm font-semibold text-slate-800 dark:text-slate-100">Weekly Planner / Agenda</h4>
 
       <form

@@ -30,7 +30,7 @@ const PointsHeader = ({
   const isAvatarImage = userAvatar.startsWith('data:image') || userAvatar.startsWith('http');
 
   return (
-    <header className="animate-popIn rounded-2xl border border-slate-200 bg-white/90 p-5 shadow-soft backdrop-blur-sm dark:border-slate-700 dark:bg-surface-darkCard/90">
+    <header className="animate-popIn rounded-2xl border border-slate-200 bg-[var(--card-color)]/95 p-5 shadow-soft backdrop-blur-sm dark:border-slate-700">
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div>
           <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500 dark:text-slate-400">
