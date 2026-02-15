@@ -36,10 +36,19 @@ const BooksPage = ({ books, onAddBook, onUpdateBook, onDeleteBook, onOpenBook }:
   const [totalPages, setTotalPages] = useState(300);
   const [notes, setNotes] = useState('');
 
+  const [editingBookId, setEditingBookId] = useState<string | null>(null);
+  const [editTitle, setEditTitle] = useState('');
+  const [editAuthor, setEditAuthor] = useState('');
+  const [editStartDate, setEditStartDate] = useState('');
+  const [editFinishDate, setEditFinishDate] = useState('');
+  const [editDailyGoal, setEditDailyGoal] = useState(20);
+  const [editTotalPages, setEditTotalPages] = useState(300);
+  const [editNotes, setEditNotes] = useState('');
+
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
-        <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-100">Books</h2>
+        <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-100">Book Journal</h2>
         <button
           type="button"
           onClick={() => setAdding((prev) => !prev)}
@@ -55,9 +64,7 @@ const BooksPage = ({ books, onAddBook, onUpdateBook, onDeleteBook, onOpenBook }:
           className="grid gap-2 rounded-xl border border-slate-200 bg-[var(--card-color)] p-3 dark:border-slate-700 sm:grid-cols-2"
           onSubmit={(event) => {
             event.preventDefault();
-            if (!title.trim() || !author.trim() || !targetFinishDate) {
-              return;
-            }
+            if (!title.trim() || !author.trim() || !targetFinishDate) return;
 
             onAddBook({
               title,
@@ -150,6 +157,8 @@ const BooksPage = ({ books, onAddBook, onUpdateBook, onDeleteBook, onOpenBook }:
       <div className="grid gap-3 md:grid-cols-2">
         {books.map((book) => {
           const progress = getBookProgress(book);
+          const isEditing = editingBookId === book.id;
+
           return (
             <article key={book.id} className="rounded-xl border border-slate-200 bg-[var(--card-color)] p-3 dark:border-slate-700">
               <div className="flex items-start justify-between gap-2">
@@ -166,25 +175,14 @@ const BooksPage = ({ books, onAddBook, onUpdateBook, onDeleteBook, onOpenBook }:
                     <button
                       type="button"
                       onClick={() => {
-                        const titleNext = window.prompt('Title', book.title);
-                        if (!titleNext) return;
-                        const authorNext = window.prompt('Author', book.author);
-                        if (!authorNext) return;
-                        const startNext = window.prompt('Start day (YYYY-MM-DD)', book.startDate) ?? book.startDate;
-                        const finishNext =
-                          window.prompt('Finish day (YYYY-MM-DD)', book.targetFinishDate) ?? book.targetFinishDate;
-                        const dailyNext =
-                          window.prompt('Daily page goal', String(book.dailyPageGoal)) ?? String(book.dailyPageGoal);
-                        const totalNext =
-                          window.prompt('Total pages', String(book.totalPages)) ?? String(book.totalPages);
-                        onUpdateBook(book.id, {
-                          title: titleNext,
-                          author: authorNext,
-                          startDate: startNext,
-                          targetFinishDate: finishNext,
-                          dailyPageGoal: Number(dailyNext),
-                          totalPages: Number(totalNext)
-                        });
+                        setEditingBookId(book.id);
+                        setEditTitle(book.title);
+                        setEditAuthor(book.author);
+                        setEditStartDate(book.startDate);
+                        setEditFinishDate(book.targetFinishDate);
+                        setEditDailyGoal(book.dailyPageGoal);
+                        setEditTotalPages(book.totalPages);
+                        setEditNotes(book.notes);
                       }}
                       className="block w-full rounded px-2 py-1 text-left text-xs hover:bg-slate-100 dark:hover:bg-slate-800"
                     >
@@ -200,6 +198,89 @@ const BooksPage = ({ books, onAddBook, onUpdateBook, onDeleteBook, onOpenBook }:
                   </div>
                 </details>
               </div>
+
+              {isEditing ? (
+                <div className="mt-3 grid gap-2 rounded-lg border border-slate-200 p-2 dark:border-slate-700">
+                  <input
+                    value={editTitle}
+                    onChange={(event) => setEditTitle(event.target.value)}
+                    placeholder="Title"
+                    className="rounded border border-slate-300 px-2 py-1 text-xs dark:border-slate-600 dark:bg-slate-900"
+                  />
+                  <input
+                    value={editAuthor}
+                    onChange={(event) => setEditAuthor(event.target.value)}
+                    placeholder="Author"
+                    className="rounded border border-slate-300 px-2 py-1 text-xs dark:border-slate-600 dark:bg-slate-900"
+                  />
+                  <div className="grid grid-cols-2 gap-2">
+                    <input
+                      type="date"
+                      value={editStartDate}
+                      onChange={(event) => setEditStartDate(event.target.value)}
+                      className="rounded border border-slate-300 px-2 py-1 text-xs dark:border-slate-600 dark:bg-slate-900"
+                    />
+                    <input
+                      type="date"
+                      value={editFinishDate}
+                      onChange={(event) => setEditFinishDate(event.target.value)}
+                      className="rounded border border-slate-300 px-2 py-1 text-xs dark:border-slate-600 dark:bg-slate-900"
+                    />
+                  </div>
+                  <div className="grid grid-cols-2 gap-2">
+                    <input
+                      type="number"
+                      min={1}
+                      value={editDailyGoal}
+                      onChange={(event) => setEditDailyGoal(Number(event.target.value))}
+                      placeholder="Daily goal"
+                      className="rounded border border-slate-300 px-2 py-1 text-xs dark:border-slate-600 dark:bg-slate-900"
+                    />
+                    <input
+                      type="number"
+                      min={1}
+                      value={editTotalPages}
+                      onChange={(event) => setEditTotalPages(Number(event.target.value))}
+                      placeholder="Total pages"
+                      className="rounded border border-slate-300 px-2 py-1 text-xs dark:border-slate-600 dark:bg-slate-900"
+                    />
+                  </div>
+                  <textarea
+                    value={editNotes}
+                    onChange={(event) => setEditNotes(event.target.value)}
+                    placeholder="Notes"
+                    className="h-20 rounded border border-slate-300 px-2 py-1 text-xs dark:border-slate-600 dark:bg-slate-900"
+                  />
+                  <div className="flex justify-end gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setEditingBookId(null)}
+                      className="rounded border border-slate-300 px-2 py-1 text-xs dark:border-slate-600"
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        onUpdateBook(book.id, {
+                          title: editTitle,
+                          author: editAuthor,
+                          startDate: editStartDate,
+                          targetFinishDate: editFinishDate,
+                          dailyPageGoal: editDailyGoal,
+                          totalPages: editTotalPages,
+                          notes: editNotes
+                        });
+                        setEditingBookId(null);
+                      }}
+                      className="rounded px-2 py-1 text-xs font-semibold text-white"
+                      style={{ backgroundColor: 'var(--secondary-color)' }}
+                    >
+                      Save
+                    </button>
+                  </div>
+                </div>
+              ) : null}
 
               <div className="mt-2 h-1.5 rounded bg-slate-200 dark:bg-slate-700">
                 <div

@@ -5,8 +5,10 @@ import AuthForm from './components/AuthForm';
 import BookDetailPage from './components/BookDetailPage';
 import BooksPage from './components/BooksPage';
 import BudgetDashboard from './components/BudgetDashboard';
+import ConfirmDialog from './components/ConfirmDialog';
 import MediaCollection from './components/MediaCollection';
 import ModuleLayoutWrapper from './components/ModuleLayoutWrapper';
+import NotesBoard from './components/NotesBoard';
 import PointsHeader from './components/PointsHeader';
 import SettingsPanel from './components/SettingsPanel';
 import SidebarNavigation from './components/SidebarNavigation';
@@ -18,7 +20,7 @@ import WishListManager from './components/WishListManager';
 import WorkoutPlanner from './components/WorkoutPlanner';
 import { isSupabaseConfigured, supabase } from './lib/supabase';
 import { getCloudStateWeekLabel, useHabitStore } from './store/useHabitStore';
-import type { FontFamilyOption, UserProfile } from './types/habit';
+import type { DayId, FontFamilyOption, UserProfile } from './types/habit';
 import { addWeeksToId, getCurrentMonthKey, getCurrentWeekId, getTodayDayId } from './utils/date';
 import { getCompletedPointsForDay, getTaskCounts, getTotalCompletedPoints } from './utils/stats';
 
@@ -44,8 +46,20 @@ const App = () => {
   const [authNotice, setAuthNotice] = useState<string | null>(null);
   const [syncStatus, setSyncStatus] = useState('Idle');
   const [currentPath, setCurrentPath] = useState(() => window.location.pathname || '/');
+  const [confirmState, setConfirmState] = useState<{
+    open: boolean;
+    title: string;
+    message: string;
+    confirmLabel: string;
+  }>({
+    open: false,
+    title: '',
+    message: '',
+    confirmLabel: 'Delete'
+  });
 
   const cloudHydratedRef = useRef(false);
+  const confirmActionRef = useRef<(() => void) | null>(null);
 
   const {
     weeklyPlanner,
@@ -55,6 +69,7 @@ const App = () => {
     shoppingLists,
     budget,
     mediaList,
+    notes,
     themeSettings,
     userProfile,
     userAuth,
@@ -117,7 +132,11 @@ const App = () => {
 
     addMediaItem,
     toggleMediaItem,
-    deleteMediaItem
+    deleteMediaItem,
+
+    addNote,
+    updateNote,
+    deleteNote
   } = useHabitStore();
 
   const currentWeek = useMemo(() => getCurrentWeek(), [getCurrentWeek, weeklyPlanner]);
@@ -138,13 +157,26 @@ const App = () => {
     currentPath === '/shopping' ||
     currentPath === '/budget' ||
     currentPath === '/media' ||
+    currentPath === '/notes' ||
     currentPath.startsWith('/books/')
       ? currentPath
       : '/';
 
   const cloudStatePayload = useMemo(
     () => exportCloudState(),
-    [exportCloudState, weeklyPlanner, habits, books, sports, shoppingLists, budget, mediaList, userProfile, themeSettings]
+    [
+      exportCloudState,
+      weeklyPlanner,
+      habits,
+      books,
+      sports,
+      shoppingLists,
+      budget,
+      mediaList,
+      notes,
+      userProfile,
+      themeSettings
+    ]
   );
 
   const navigate = (path: string) => {
@@ -164,64 +196,135 @@ const App = () => {
     setCurrentWeek(addWeeksToId(weeklyPlanner.currentWeekId, 1));
   };
 
-  const confirmDelete = (targetLabel: string): boolean =>
-    window.confirm(`${targetLabel} silmek istedigine emin misin?`);
-
-  const handleDeleteHabit = (day: import('./types/habit').DayId, habitId: string) => {
-    if (!confirmDelete('Bu habiti')) return;
-    deleteHabit(day, habitId);
+  const openConfirm = ({
+    title,
+    message,
+    confirmLabel = 'Delete',
+    onConfirm
+  }: {
+    title: string;
+    message: string;
+    confirmLabel?: string;
+    onConfirm: () => void;
+  }) => {
+    confirmActionRef.current = onConfirm;
+    setConfirmState({
+      open: true,
+      title,
+      message,
+      confirmLabel
+    });
   };
 
-  const handleDeletePlannerItem = (day: import('./types/habit').DayId, itemId: string) => {
-    if (!confirmDelete('Bu planner maddesini')) return;
-    deletePlannerItem(day, itemId);
+  const closeConfirm = () => {
+    confirmActionRef.current = null;
+    setConfirmState((prev) => ({ ...prev, open: false }));
   };
 
-  const handleDeleteBook = (bookId: string, navigateAfter = false) => {
-    if (!confirmDelete('Bu kitabi')) return;
-    deleteBook(bookId);
-    if (navigateAfter) {
-      navigate('/books');
+  const submitConfirm = () => {
+    const action = confirmActionRef.current;
+    closeConfirm();
+    if (action) {
+      action();
     }
   };
 
+  const handleDeleteHabit = (day: DayId, habitId: string) => {
+    openConfirm({
+      title: 'Delete habit',
+      message: 'Are you sure you want to delete this habit?',
+      onConfirm: () => deleteHabit(day, habitId)
+    });
+  };
+
+  const handleDeletePlannerItem = (day: DayId, itemId: string) => {
+    openConfirm({
+      title: 'Delete planner item',
+      message: 'Are you sure you want to delete this planner item?',
+      onConfirm: () => deletePlannerItem(day, itemId)
+    });
+  };
+
+  const handleDeleteBook = (bookId: string, navigateAfter = false) => {
+    openConfirm({
+      title: 'Delete book',
+      message: 'Are you sure you want to delete this book?',
+      onConfirm: () => {
+        deleteBook(bookId);
+        if (navigateAfter) {
+          navigate('/books');
+        }
+      }
+    });
+  };
+
   const handleDeleteWorkoutProgram = (programId: string) => {
-    if (!confirmDelete('Bu workout programini')) return;
-    deleteWorkoutProgram(programId);
+    openConfirm({
+      title: 'Delete workout program',
+      message: 'Are you sure you want to delete this workout program?',
+      onConfirm: () => deleteWorkoutProgram(programId)
+    });
   };
 
-  const handleDeleteWorkoutItem = (programId: string, day: import('./types/habit').DayId, itemId: string) => {
-    if (!confirmDelete('Bu egzersizi')) return;
-    deleteWorkoutItem(programId, day, itemId);
+  const handleDeleteWorkoutItem = (programId: string, day: DayId, itemId: string) => {
+    openConfirm({
+      title: 'Delete exercise',
+      message: 'Are you sure you want to delete this exercise?',
+      onConfirm: () => deleteWorkoutItem(programId, day, itemId)
+    });
   };
 
-  const handleClearWorkoutDay = (programId: string, day: import('./types/habit').DayId) => {
-    if (!window.confirm('Bu gunun tum egzersizlerini temizlemek istedigine emin misin?')) return;
-    clearWorkoutDay(programId, day);
+  const handleClearWorkoutDay = (programId: string, day: DayId) => {
+    openConfirm({
+      title: 'Clear day',
+      message: 'Are you sure you want to clear all exercises for this day?',
+      confirmLabel: 'Clear',
+      onConfirm: () => clearWorkoutDay(programId, day)
+    });
   };
 
   const handleDeleteShoppingList = (listId: string) => {
-    if (!confirmDelete('Bu listeyi')) return;
-    deleteShoppingList(listId);
+    openConfirm({
+      title: 'Delete shopping list',
+      message: 'Are you sure you want to delete this list?',
+      onConfirm: () => deleteShoppingList(listId)
+    });
   };
 
   const handleDeleteExpense = (monthKey: string, expenseId: string) => {
-    if (!confirmDelete('Bu gideri')) return;
-    deleteExpense(monthKey, expenseId);
+    openConfirm({
+      title: 'Delete expense',
+      message: 'Are you sure you want to delete this expense?',
+      onConfirm: () => deleteExpense(monthKey, expenseId)
+    });
   };
 
   const handleDeleteMediaItem = (itemId: string) => {
-    if (!confirmDelete('Bu kaydi')) return;
-    deleteMediaItem(itemId);
+    openConfirm({
+      title: 'Delete item',
+      message: 'Are you sure you want to delete this item?',
+      onConfirm: () => deleteMediaItem(itemId)
+    });
+  };
+
+  const handleDeleteNote = (noteId: string) => {
+    openConfirm({
+      title: 'Delete note',
+      message: 'Are you sure you want to delete this note?',
+      onConfirm: () => deleteNote(noteId)
+    });
   };
 
   const handleResetApp = () => {
-    const approved = window.confirm(
-      'Tum uygulama verileri sifirlansin mi? Bu islem geri alinamaz.'
-    );
-    if (!approved) return;
-    resetAppData();
-    setSettingsOpen(false);
+    openConfirm({
+      title: 'Reset app',
+      message: 'Are you sure you want to reset all app data? This action cannot be undone.',
+      confirmLabel: 'Reset',
+      onConfirm: () => {
+        resetAppData();
+        setSettingsOpen(false);
+      }
+    });
   };
 
   useEffect(() => {
@@ -560,7 +663,7 @@ const App = () => {
           ) : null}
 
           {displayPath === '/books' ? (
-            <ModuleLayoutWrapper title="Books" subtitle="Reading plans and progress">
+            <ModuleLayoutWrapper title="Books - Book Journal" subtitle="Reading plans and progress">
               <BooksPage
                 books={books.entries}
                 onAddBook={addBook}
@@ -596,7 +699,7 @@ const App = () => {
           ) : null}
 
           {displayPath === '/sports' ? (
-            <ModuleLayoutWrapper title="Sports" subtitle="Plan workout programs by day and track completion">
+            <ModuleLayoutWrapper title="Sports - Workout Planner" subtitle="Plan workout programs by day and track completion">
               <WorkoutPlanner
                 programs={sports.programs}
                 onAddProgram={addWorkoutProgram}
@@ -625,7 +728,7 @@ const App = () => {
           ) : null}
 
           {displayPath === '/budget' ? (
-            <ModuleLayoutWrapper title="Budget" subtitle="Track income, expenses, and remaining balance">
+            <ModuleLayoutWrapper title="Budget - Budget Planner" subtitle="Track income, expenses, and remaining balance">
               {currentBudgetMonth ? (
                 <BudgetDashboard
                   month={currentBudgetMonth}
@@ -638,12 +741,23 @@ const App = () => {
           ) : null}
 
           {displayPath === '/media' ? (
-            <ModuleLayoutWrapper title="Watch / Read Later" subtitle="Movies, TV shows, and books to consume later">
+            <ModuleLayoutWrapper title="Watch-Read Later" subtitle="Movies, TV shows, and books to consume later">
               <MediaCollection
                 items={mediaList.items}
                 onAddItem={addMediaItem}
                 onToggleItem={toggleMediaItem}
                 onDeleteItem={handleDeleteMediaItem}
+              />
+            </ModuleLayoutWrapper>
+          ) : null}
+
+          {displayPath === '/notes' ? (
+            <ModuleLayoutWrapper title="Notes" subtitle="Keep quick notes in one place">
+              <NotesBoard
+                items={notes.items}
+                onAddNote={addNote}
+                onUpdateNote={updateNote}
+                onDeleteNote={handleDeleteNote}
               />
             </ModuleLayoutWrapper>
           ) : null}
@@ -681,6 +795,15 @@ const App = () => {
         profile={userProfile}
         onClose={() => setProfileOpen(false)}
         onSave={handleProfileSave}
+      />
+
+      <ConfirmDialog
+        open={confirmState.open}
+        title={confirmState.title}
+        message={confirmState.message}
+        confirmLabel={confirmState.confirmLabel}
+        onCancel={closeConfirm}
+        onConfirm={submitConfirm}
       />
     </main>
   );

@@ -130,7 +130,8 @@ export type BookEntry = {
 export type WorkoutItem = {
   id: string;
   title: string;
-  reps?: string;
+  sets?: number;
+  reps?: number;
   durationMin?: number;
   completed: boolean;
 };
@@ -180,6 +181,14 @@ export type MediaItem = {
   notes?: string;
   completed: boolean;
   createdAt: string;
+};
+
+export type NoteItem = {
+  id: string;
+  title: string;
+  content: string;
+  createdAt: string;
+  updatedAt: string;
 };
 
 export type ThemeMode = 'light' | 'dark' | 'system';

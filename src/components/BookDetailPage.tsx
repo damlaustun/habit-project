@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import type { BookEntry } from '../types/habit';
 import { getBookProgress } from '../utils/stats';
 
@@ -33,6 +33,24 @@ const BookDetailPage = ({
   const [pagesInput, setPagesInput] = useState(0);
   const [notes, setNotes] = useState(book.notes);
   const [quote, setQuote] = useState('');
+  const [editing, setEditing] = useState(false);
+
+  const [title, setTitle] = useState(book.title);
+  const [author, setAuthor] = useState(book.author);
+  const [startDate, setStartDate] = useState(book.startDate);
+  const [targetFinishDate, setTargetFinishDate] = useState(book.targetFinishDate);
+  const [dailyPageGoal, setDailyPageGoal] = useState(book.dailyPageGoal);
+  const [totalPages, setTotalPages] = useState(book.totalPages);
+
+  useEffect(() => {
+    setNotes(book.notes);
+    setTitle(book.title);
+    setAuthor(book.author);
+    setStartDate(book.startDate);
+    setTargetFinishDate(book.targetFinishDate);
+    setDailyPageGoal(book.dailyPageGoal);
+    setTotalPages(book.totalPages);
+  }, [book]);
 
   return (
     <div className="space-y-4">
@@ -57,26 +75,7 @@ const BookDetailPage = ({
             <div className="absolute right-0 z-20 mt-1 w-40 rounded border border-slate-200 bg-[var(--card-color)] p-1 shadow-lg dark:border-slate-700">
               <button
                 type="button"
-                onClick={() => {
-                  const titleNext = window.prompt('Title', book.title);
-                  if (!titleNext) return;
-                  const authorNext = window.prompt('Author', book.author);
-                  if (!authorNext) return;
-                  const startNext = window.prompt('Start day (YYYY-MM-DD)', book.startDate) ?? book.startDate;
-                  const finishNext =
-                    window.prompt('Finish day (YYYY-MM-DD)', book.targetFinishDate) ?? book.targetFinishDate;
-                  const dailyNext =
-                    window.prompt('Daily page goal', String(book.dailyPageGoal)) ?? String(book.dailyPageGoal);
-                  const totalNext = window.prompt('Total pages', String(book.totalPages)) ?? String(book.totalPages);
-                  onUpdateBook(book.id, {
-                    title: titleNext,
-                    author: authorNext,
-                    startDate: startNext,
-                    targetFinishDate: finishNext,
-                    dailyPageGoal: Number(dailyNext),
-                    totalPages: Number(totalNext)
-                  });
-                }}
+                onClick={() => setEditing(true)}
                 className="block w-full rounded px-2 py-1 text-left text-xs hover:bg-slate-100 dark:hover:bg-slate-800"
               >
                 Edit book
@@ -100,6 +99,78 @@ const BookDetailPage = ({
             style={{ width: `${progress.percent}%`, backgroundColor: 'var(--secondary-color)' }}
           />
         </div>
+
+        {editing ? (
+          <div className="mt-3 grid gap-2 rounded-lg border border-slate-200 p-2 dark:border-slate-700 sm:grid-cols-2">
+            <input
+              value={title}
+              onChange={(event) => setTitle(event.target.value)}
+              placeholder="Title"
+              className="rounded border border-slate-300 px-2 py-1.5 text-xs dark:border-slate-600 dark:bg-slate-900"
+            />
+            <input
+              value={author}
+              onChange={(event) => setAuthor(event.target.value)}
+              placeholder="Author"
+              className="rounded border border-slate-300 px-2 py-1.5 text-xs dark:border-slate-600 dark:bg-slate-900"
+            />
+            <input
+              type="date"
+              value={startDate}
+              onChange={(event) => setStartDate(event.target.value)}
+              className="rounded border border-slate-300 px-2 py-1.5 text-xs dark:border-slate-600 dark:bg-slate-900"
+            />
+            <input
+              type="date"
+              value={targetFinishDate}
+              onChange={(event) => setTargetFinishDate(event.target.value)}
+              className="rounded border border-slate-300 px-2 py-1.5 text-xs dark:border-slate-600 dark:bg-slate-900"
+            />
+            <input
+              type="number"
+              min={1}
+              value={dailyPageGoal}
+              onChange={(event) => setDailyPageGoal(Number(event.target.value))}
+              placeholder="Daily page goal"
+              className="rounded border border-slate-300 px-2 py-1.5 text-xs dark:border-slate-600 dark:bg-slate-900"
+            />
+            <input
+              type="number"
+              min={1}
+              value={totalPages}
+              onChange={(event) => setTotalPages(Number(event.target.value))}
+              placeholder="Total pages"
+              className="rounded border border-slate-300 px-2 py-1.5 text-xs dark:border-slate-600 dark:bg-slate-900"
+            />
+            <div className="flex justify-end gap-2 sm:col-span-2">
+              <button
+                type="button"
+                onClick={() => setEditing(false)}
+                className="rounded border border-slate-300 px-2 py-1 text-xs dark:border-slate-600"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  onUpdateBook(book.id, {
+                    title,
+                    author,
+                    startDate,
+                    targetFinishDate,
+                    dailyPageGoal,
+                    totalPages
+                  });
+                  setEditing(false);
+                }}
+                className="rounded px-2 py-1 text-xs font-semibold text-white"
+                style={{ backgroundColor: 'var(--secondary-color)' }}
+              >
+                Save
+              </button>
+            </div>
+          </div>
+        ) : null}
       </section>
 
       <section className="rounded-xl border border-slate-200 bg-[var(--card-color)] p-4 dark:border-slate-700">

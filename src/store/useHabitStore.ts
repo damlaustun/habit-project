@@ -14,6 +14,7 @@ import type {
   HabitPriority,
   MediaItem,
   MediaType,
+  NoteItem,
   PlannerInput,
   PlannerItem,
   RecurringHabitTemplate,
@@ -78,6 +79,10 @@ type MediaListSlice = {
   items: MediaItem[];
 };
 
+type NotesSlice = {
+  items: NoteItem[];
+};
+
 type ThemeSettingsSlice = {
   mode: ThemeMode;
   colors: ThemeColors;
@@ -92,6 +97,7 @@ type CloudAppState = {
   shoppingLists: ShoppingListsSlice;
   budget: BudgetSlice;
   mediaList: MediaListSlice;
+  notes: NotesSlice;
   userProfile: UserProfile;
   themeSettings: ThemeSettingsSlice;
 };
@@ -181,14 +187,14 @@ type HabitStore = CloudAppState & {
   addWorkoutItem: (
     programId: string,
     day: DayId,
-    input: { title: string; reps?: string; durationMin?: number }
+    input: { title: string; sets?: number; reps?: number; durationMin?: number }
   ) => void;
   toggleWorkoutItem: (programId: string, day: DayId, itemId: string) => void;
   updateWorkoutItem: (
     programId: string,
     day: DayId,
     itemId: string,
-    patch: { title?: string; reps?: string; durationMin?: number }
+    patch: { title?: string; sets?: number; reps?: number; durationMin?: number }
   ) => void;
   deleteWorkoutItem: (programId: string, day: DayId, itemId: string) => void;
   clearWorkoutDay: (programId: string, day: DayId) => void;
@@ -206,6 +212,10 @@ type HabitStore = CloudAppState & {
   addMediaItem: (input: { type: MediaType; title: string; genre?: string; notes?: string }) => void;
   toggleMediaItem: (itemId: string) => void;
   deleteMediaItem: (itemId: string) => void;
+
+  addNote: (input: { title: string; content?: string }) => void;
+  updateNote: (noteId: string, patch: { title?: string; content?: string }) => void;
+  deleteNote: (noteId: string) => void;
 };
 
 const CLOUD_STATE_WEEK_LABEL = '__APP_STATE_V3__';
@@ -241,7 +251,7 @@ const createSampleSportsProgram = (): WorkoutProgram => ({
   name: 'Starter Program',
   createdAt: new Date().toISOString(),
   days: {
-    mon: [{ id: uid(), title: 'Chest Workout', reps: '3x12', completed: false }],
+    mon: [{ id: uid(), title: 'Bench Press', sets: 3, reps: 12, completed: false }],
     tue: [{ id: uid(), title: '30 min cardio', durationMin: 30, completed: false }],
     wed: [],
     thu: [],
@@ -250,6 +260,16 @@ const createSampleSportsProgram = (): WorkoutProgram => ({
     sun: []
   }
 });
+
+const createSampleNotes = (): NoteItem[] => [
+  {
+    id: uid(),
+    title: 'Weekly focus',
+    content: 'Main priority: consistency over intensity.',
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString()
+  }
+];
 
 const createSampleBooks = (): BookEntry[] => [
   {
@@ -339,6 +359,9 @@ const createDefaultCloudState = (): CloudAppState => {
     mediaList: {
       items: createSampleMedia()
     },
+    notes: {
+      items: createSampleNotes()
+    },
     userProfile: defaultUserProfile,
     themeSettings: defaultThemeSettings
   };
@@ -368,6 +391,40 @@ const normalizeAgendaItem = (item: PlannerItem): PlannerItem => ({
   ...item,
   updatedAt: item.updatedAt ?? item.createdAt
 });
+
+const normalizeWorkoutItem = (item: WorkoutProgram['days'][DayId][number]) => {
+  const oldReps = item.reps as unknown;
+  let sets = item.sets;
+  let reps = typeof oldReps === 'number' ? oldReps : undefined;
+
+  if ((sets === undefined || reps === undefined) && typeof oldReps === 'string') {
+    const match = oldReps.match(/(\d+)\s*x\s*(\d+)/i);
+    if (match) {
+      sets = Number(match[1]);
+      reps = Number(match[2]);
+    }
+  }
+
+  const hasSetRep = Number(sets) > 0 && Number(reps) > 0;
+
+  return {
+    ...item,
+    sets: hasSetRep ? clampNumber(Number(sets)) : undefined,
+    reps: hasSetRep ? clampNumber(Number(reps)) : undefined,
+    durationMin: hasSetRep ? undefined : item.durationMin ? clampNumber(item.durationMin) : undefined
+  };
+};
+
+const normalizeWorkoutPrograms = (programs: WorkoutProgram[]): WorkoutProgram[] => {
+  return programs.map((program) => ({
+    ...program,
+    description: program.description ?? '',
+    days: DAY_ORDER.reduce((acc, day) => {
+      acc[day] = (program.days?.[day] ?? []).map(normalizeWorkoutItem);
+      return acc;
+    }, {} as WorkoutProgram['days'])
+  }));
+};
 
 const normalizeWeek = (plan: WeeklyPlan, weekId: string): WeeklyPlan => {
   const base = createEmptyWeek(weekId);
@@ -702,7 +759,7 @@ const fromCloudState = (payload: Partial<CloudAppState>): CloudAppState => {
       entries: payload.books?.entries ?? defaults.books.entries
     },
     sports: {
-      programs: payload.sports?.programs ?? defaults.sports.programs
+      programs: normalizeWorkoutPrograms(payload.sports?.programs ?? defaults.sports.programs)
     },
     shoppingLists: {
       lists:
@@ -713,6 +770,9 @@ const fromCloudState = (payload: Partial<CloudAppState>): CloudAppState => {
     budget,
     mediaList: {
       items: payload.mediaList?.items ?? defaults.mediaList.items
+    },
+    notes: {
+      items: payload.notes?.items ?? defaults.notes.items
     },
     userProfile: {
       ...defaults.userProfile,
@@ -772,6 +832,7 @@ export const useHabitStore = create<HabitStore>()(
         shoppingLists: get().shoppingLists,
         budget: get().budget,
         mediaList: get().mediaList,
+        notes: get().notes,
         userProfile: get().userProfile,
         themeSettings: get().themeSettings
       }),
@@ -1518,13 +1579,21 @@ export const useHabitStore = create<HabitStore>()(
                       ...program.days,
                       [day]: [
                         ...program.days[day],
-                        {
-                          id: uid(),
-                          title: input.title.trim(),
-                          reps: input.reps,
-                          durationMin: input.durationMin,
-                          completed: false
-                        }
+                        (() => {
+                          const hasSetRep = Number(input.sets) > 0 && Number(input.reps) > 0;
+                          return {
+                            id: uid(),
+                            title: input.title.trim(),
+                            sets: hasSetRep ? clampNumber(Number(input.sets)) : undefined,
+                            reps: hasSetRep ? clampNumber(Number(input.reps)) : undefined,
+                            durationMin: hasSetRep
+                              ? undefined
+                              : input.durationMin
+                                ? clampNumber(input.durationMin)
+                                : undefined,
+                            completed: false
+                          };
+                        })()
                       ]
                     }
                   }
@@ -1563,15 +1632,27 @@ export const useHabitStore = create<HabitStore>()(
                       ...program.days,
                       [day]: program.days[day].map((item) =>
                         item.id === itemId
-                          ? {
-                              ...item,
-                              title: patch.title?.trim() || item.title,
-                              reps: patch.reps === undefined ? item.reps : patch.reps,
-                              durationMin:
-                                patch.durationMin === undefined
-                                  ? item.durationMin
-                                  : clampNumber(patch.durationMin)
-                            }
+                          ? (() => {
+                              const nextTitle = patch.title?.trim() || item.title;
+                              const nextSets =
+                                patch.sets === undefined ? item.sets : clampNumber(Number(patch.sets));
+                              const nextReps =
+                                patch.reps === undefined ? item.reps : clampNumber(Number(patch.reps));
+                              const hasSetRep = Number(nextSets) > 0 && Number(nextReps) > 0;
+                              return {
+                                ...item,
+                                title: nextTitle,
+                                sets: hasSetRep ? nextSets : undefined,
+                                reps: hasSetRep ? nextReps : undefined,
+                                durationMin: hasSetRep
+                                  ? undefined
+                                  : patch.durationMin === undefined
+                                    ? item.durationMin
+                                    : patch.durationMin
+                                      ? clampNumber(patch.durationMin)
+                                      : undefined
+                              };
+                            })()
                           : item
                       )
                     }
@@ -1769,11 +1850,50 @@ export const useHabitStore = create<HabitStore>()(
             ...state.mediaList,
             items: state.mediaList.items.filter((item) => item.id !== itemId)
           }
+        })),
+      addNote: (input) =>
+        set((state) => ({
+          notes: {
+            ...state.notes,
+            items: [
+              {
+                id: uid(),
+                title: input.title.trim(),
+                content: input.content?.trim() ?? '',
+                createdAt: new Date().toISOString(),
+                updatedAt: new Date().toISOString()
+              },
+              ...state.notes.items
+            ]
+          }
+        })),
+      updateNote: (noteId, patch) =>
+        set((state) => ({
+          notes: {
+            ...state.notes,
+            items: state.notes.items.map((note) =>
+              note.id === noteId
+                ? {
+                    ...note,
+                    title: patch.title === undefined ? note.title : patch.title.trim() || note.title,
+                    content: patch.content === undefined ? note.content : patch.content.trim(),
+                    updatedAt: new Date().toISOString()
+                  }
+                : note
+            )
+          }
+        })),
+      deleteNote: (noteId) =>
+        set((state) => ({
+          notes: {
+            ...state.notes,
+            items: state.notes.items.filter((note) => note.id !== noteId)
+          }
         }))
     }),
     {
       name: 'habit-weekly-planner-store',
-      version: 5,
+      version: 6,
       partialize: (state) => ({
         weeklyPlanner: state.weeklyPlanner,
         habits: state.habits,
@@ -1782,6 +1902,7 @@ export const useHabitStore = create<HabitStore>()(
         shoppingLists: state.shoppingLists,
         budget: state.budget,
         mediaList: state.mediaList,
+        notes: state.notes,
         userProfile: state.userProfile,
         themeSettings: state.themeSettings
       }),
