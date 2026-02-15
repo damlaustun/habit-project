@@ -18,13 +18,8 @@ const GoalProgressBar = ({ label, value, goal }: GoalProgressBarProps) => {
 
       <div className="mt-2 h-2 overflow-hidden rounded-full bg-slate-200 dark:bg-slate-700">
         <div
-          className="h-full rounded-full bg-[var(--primary-color)] transition-all duration-300"
-          style={{ width: `${percent}%` }}
-          role="progressbar"
-          aria-valuemin={0}
-          aria-valuemax={100}
-          aria-valuenow={percent}
-          aria-label={`${label} progress`}
+          className="h-full rounded transition-all duration-300"
+          style={{ width: `${percent}%`, backgroundColor: 'var(--secondary-color)' }}
         />
       </div>
     </div>

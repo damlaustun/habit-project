@@ -1,87 +1,184 @@
-# Habit Tracker / Weekly Planner
+# Personal Life OS (Habit + Planner)
 
-Modern, responsive habit tracker with weekly planning, task priorities, customizable themes, and persistent user settings.
+Existing React + TypeScript + Tailwind app extended into a modular personal productivity system.
 
-## Stack
+## Tech
 
 - React + TypeScript (Vite)
 - Tailwind CSS
-- Zustand state management + localStorage persistence
-- dnd-kit for drag-and-drop
+- Zustand (modular global store + migration)
+- Supabase Auth + per-user cloud persistence
 
-## What Was Added
+## Main Modules
 
-- Settings panel with persistent:
-  - Theme mode (`light`, `dark`, `system`)
-  - Color customization (primary, accent, background)
-  - Daily and weekly point goals
-  - Optional read-only past weeks
-- Removed money conversion UI/logic (points-only)
-- Weekly navigation:
-  - Previous / next week
-  - Week picker (`YYYY-WW`)
-  - Separate stored data per week
-- Task priority system:
-  - `Normal` and `Important (!)`
-  - Important tasks auto-sorted to top per day
-  - Priority badges and highlighted card style
-- Goal progress bars:
-  - Daily points progress
-  - Weekly points progress
-- Store migration logic from legacy state (`plan` + `darkMode`) to new multi-week settings model
+- `Dashboard`
+  - Vertical day layout (Mon -> Sun)
+  - Each day has 2 separated sections:
+    - `Daily Habits`
+    - `Weekly Planner / Agenda`
+- `Books`
+  - Collapsible sidebar panel
+  - Book metadata, pages logging, progress, on-track check
+- `Sports`
+  - Workout programs by day
+  - Exercise completion tracking
+- `Wish List`
+  - Multiple lists + item purchase status + optional price
+- `Budget`
+  - Monthly income/expenses, remaining balance, savings
+- `Watch/Read Later`
+  - Movies / TV / books list with completion status
+- `Settings`
+  - Theme mode + primary/secondary/background color system
 
-## Folder Structure
+## Habit System Features
 
-```text
-src/
-  components/
-    AddTaskModal.tsx
-    ColorPickerGroup.tsx
-    DayColumn.tsx
-    GoalProgressBar.tsx
-    PointsHeader.tsx
-    PriorityBadge.tsx
-    SettingsPanel.tsx
-    StatsBar.tsx
-    TaskCard.tsx
-    ThemeSelector.tsx
-    WeekNavigator.tsx
-    WeeklyBoard.tsx
-    WeeklyCalendar.tsx
-  data/
-    mockWeek.ts
-  store/
-    useHabitStore.ts
-  types/
-    habit.ts
-  utils/
-    date.ts
-    stats.ts
-  App.tsx
-  main.tsx
-  styles.css
+- Habit types: `Normal`, `! (Important)`, `Recurring`
+- Recurring habits:
+  - Auto-fill remaining days of current week
+  - Auto-generate in future weeks
+  - Day-level overrides preserved
+- Important habits:
+  - Sorted to top
+  - Minimal `!` indicator only
+- Duration tracking:
+  - Target duration
+  - Completed duration (inline)
+- Habit history:
+  - Created / completed / updated / deleted events with timestamps
+
+## Store Architecture
+
+The global Zustand store is split into scalable slices:
+
+- `habits`
+- `weeklyPlanner`
+- `books`
+- `sports`
+- `wishLists`
+- `budget`
+- `mediaList`
+- `userProfile`
+- `themeSettings`
+
+Plus runtime-only auth/session fields:
+
+- `userAuth`
+- `cloudRowId`
+
+## Persistence
+
+- Local: `habit-weekly-planner-store`
+- Cloud: user-specific row in `weekly_plans` table where:
+  - `week_label = '__APP_STATE_V3__'`
+  - `data` contains all module state
+
+## Supabase Setup
+
+### 1) Enable Email Auth
+
+- Supabase -> `Authentication` -> `Providers` -> `Email`
+
+### 2) SQL (run once)
+
+```sql
+create table if not exists weekly_plans (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid references auth.users(id) on delete cascade,
+  week_label text not null,
+  data jsonb not null,
+  created_at timestamp with time zone default now(),
+  updated_at timestamp with time zone default now()
+);
+
+alter table weekly_plans enable row level security;
+
+create policy "users can read own plans"
+on weekly_plans for select
+using (auth.uid() = user_id);
+
+create policy "users can insert own plans"
+on weekly_plans for insert
+with check (auth.uid() = user_id);
+
+create policy "users can update own plans"
+on weekly_plans for update
+using (auth.uid() = user_id);
 ```
 
-## Setup
+### 3) Environment Variables
+
+Create `.env` in project root:
+
+```env
+VITE_SUPABASE_URL=https://your-project-ref.supabase.co
+VITE_SUPABASE_ANON_KEY=your_anon_key
+```
+
+## Local Run
 
 ```bash
 npm install
 npm run dev -- --host 127.0.0.1 --port 5173
 ```
 
-Production build:
+## Build
 
 ```bash
 npm run build
 ```
 
-## Persistence
+## Deployment (Vercel)
 
-All weeks + settings persist in local storage key:
+- Framework: `Vite`
+- Build command: `vite build`
+- Output directory: `dist`
+- Add same env vars in Vercel project settings.
 
-- `habit-weekly-planner-store`
+### First-Time Deploy (Step-by-Step)
+
+1. Push code to GitHub:
+
+```bash
+cd "/Users/damlaustun/Documents/New project/habit-project"
+git add .
+git commit -m "life os upgrade"
+git push origin main
+```
+
+2. In Vercel:
+- `Add New Project` -> import `damlaustun/habit-project`
+- Preset: `Vite`
+- Root Directory: `./`
+- Add env vars:
+  - `VITE_SUPABASE_URL`
+  - `VITE_SUPABASE_ANON_KEY`
+- Click `Deploy`
+
+3. Production URL:
+- Open Vercel project -> `Overview`
+- Your live URL is shown there (usually `*.vercel.app`)
+
+### Redeploy After Every Git Push
+
+- If GitHub is connected, every `git push origin main` auto-deploys.
+
+### One-Command Manual Redeploy (Deploy Hook)
+
+Create `.env.deploy` in project root:
+
+```env
+VERCEL_DEPLOY_HOOK=https://api.vercel.com/v1/integrations/deploy/...
+```
+
+Run:
+
+```bash
+cd "/Users/damlaustun/Documents/New project/habit-project"
+./scripts/deploy.sh
+```
 
 ## Notes
 
-- Existing local state is migrated automatically.
-- Priority sort order in each day: important first, then by creation time.
+- Migration logic preserves older saved state formats.
+- Existing habit completion logic is preserved and extended.

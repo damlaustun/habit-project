@@ -1,93 +1,58 @@
-import {
-  DndContext,
-  KeyboardSensor,
-  PointerSensor,
-  closestCorners,
-  useSensor,
-  useSensors,
-  type DragEndEvent
-} from '@dnd-kit/core';
-import { sortableKeyboardCoordinates } from '@dnd-kit/sortable';
-import { DAY_ORDER, type DayId, type Task, type WeeklyPlan } from '../types/habit';
-import DayColumn from './DayColumn';
+import { DAY_ORDER, type DayId, type HabitItem, type WeeklyPlan } from '../types/habit';
+import DayContainer from './DayContainer';
 
 type WeeklyBoardProps = {
   plan: WeeklyPlan;
   readOnly?: boolean;
-  onAddTaskClick: (day: DayId) => void;
-  onToggleTask: (day: DayId, taskId: string) => void;
-  onDeleteTask: (day: DayId, taskId: string) => void;
-  onUpdateTask: (
+  onAddHabitClick: (day: DayId) => void;
+  onToggleHabit: (day: DayId, habitId: string) => void;
+  onDeleteHabit: (day: DayId, habitId: string) => void;
+  onUpdateHabit: (
     day: DayId,
-    taskId: string,
-    patch: Partial<Pick<Task, 'title' | 'description' | 'points' | 'completed' | 'priority'>>
+    habitId: string,
+    patch: Partial<
+      Pick<
+        HabitItem,
+        'title' | 'description' | 'points' | 'priority' | 'completed' | 'targetDurationMin' | 'completedDurationMin'
+      >
+    >
   ) => void;
-  onReorderTask: (from: { day: DayId; id: string }, to: { day: DayId; id: string }) => void;
-  onMoveToColumnEnd: (from: { day: DayId; id: string }, toDay: DayId) => void;
+  onUpdateHabitDuration: (day: DayId, habitId: string, completedDurationMin: number) => void;
+  onAddPlannerItem: (day: DayId, input: { title: string; description?: string; eventTime?: string }) => void;
+  onTogglePlannerItem: (day: DayId, itemId: string) => void;
+  onDeletePlannerItem: (day: DayId, itemId: string) => void;
 };
 
 const WeeklyBoard = ({
   plan,
   readOnly,
-  onAddTaskClick,
-  onToggleTask,
-  onDeleteTask,
-  onUpdateTask,
-  onReorderTask,
-  onMoveToColumnEnd
+  onAddHabitClick,
+  onToggleHabit,
+  onDeleteHabit,
+  onUpdateHabit,
+  onUpdateHabitDuration,
+  onAddPlannerItem,
+  onTogglePlannerItem,
+  onDeletePlannerItem
 }: WeeklyBoardProps) => {
-  const sensors = useSensors(
-    useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
-    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
-  );
-
-  const handleDragEnd = (event: DragEndEvent) => {
-    if (readOnly) {
-      return;
-    }
-
-    const { active, over } = event;
-    if (!over) {
-      return;
-    }
-
-    const sourceDay = active.data.current?.day as DayId | undefined;
-    const targetType = over.data.current?.type as 'task' | 'column' | undefined;
-    const targetDay = over.data.current?.day as DayId | undefined;
-
-    if (!sourceDay || !targetDay) {
-      return;
-    }
-
-    if (targetType === 'task') {
-      onReorderTask({ day: sourceDay, id: String(active.id) }, { day: targetDay, id: String(over.id) });
-      return;
-    }
-
-    onMoveToColumnEnd({ day: sourceDay, id: String(active.id) }, targetDay);
-  };
-
   return (
-    <DndContext sensors={sensors} collisionDetection={closestCorners} onDragEnd={handleDragEnd}>
-      <div className="grid min-w-[1200px] grid-cols-7 gap-3">
-        {DAY_ORDER.map((day) => {
-          const dayPlan = plan.days[day];
-          return (
-            <DayColumn
-              key={day}
-              day={day}
-              label={dayPlan.label}
-              tasks={dayPlan.tasks}
-              readOnly={readOnly}
-              onAddTask={onAddTaskClick}
-              onToggleTask={onToggleTask}
-              onDeleteTask={onDeleteTask}
-              onUpdateTask={onUpdateTask}
-            />
-          );
-        })}
-      </div>
-    </DndContext>
+    <div className="space-y-3">
+      {DAY_ORDER.map((day) => (
+        <DayContainer
+          key={day}
+          dayData={plan.days[day]}
+          readOnly={readOnly}
+          onAddHabit={onAddHabitClick}
+          onToggleHabit={onToggleHabit}
+          onDeleteHabit={onDeleteHabit}
+          onUpdateHabit={onUpdateHabit}
+          onUpdateDuration={onUpdateHabitDuration}
+          onAddPlannerItem={onAddPlannerItem}
+          onTogglePlannerItem={onTogglePlannerItem}
+          onDeletePlannerItem={onDeletePlannerItem}
+        />
+      ))}
+    </div>
   );
 };
 

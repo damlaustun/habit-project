@@ -1,5 +1,6 @@
 import { useEffect, useState, type FormEvent } from 'react';
-import type { DayId, TaskInput, TaskPriority } from '../types/habit';
+import RecurringHabitToggle from './RecurringHabitToggle';
+import type { DayId, HabitType, TaskInput } from '../types/habit';
 
 type AddTaskModalProps = {
   day: DayId | null;
@@ -12,14 +13,16 @@ const AddTaskModal = ({ day, onClose, onSubmit, disabled }: AddTaskModalProps) =
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [points, setPoints] = useState(5);
-  const [priority, setPriority] = useState<TaskPriority>('normal');
+  const [habitType, setHabitType] = useState<HabitType>('normal');
+  const [targetDurationMin, setTargetDurationMin] = useState(0);
 
   useEffect(() => {
     if (!day) {
       setTitle('');
       setDescription('');
       setPoints(5);
-      setPriority('normal');
+      setHabitType('normal');
+      setTargetDurationMin(0);
     }
   }, [day]);
 
@@ -39,7 +42,8 @@ const AddTaskModal = ({ day, onClose, onSubmit, disabled }: AddTaskModalProps) =
       title: normalizedTitle,
       description,
       points,
-      priority
+      habitType,
+      targetDurationMin
     });
 
     onClose();
@@ -48,7 +52,7 @@ const AddTaskModal = ({ day, onClose, onSubmit, disabled }: AddTaskModalProps) =
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/40 p-4 backdrop-blur-sm">
       <div className="w-full max-w-md animate-popIn rounded-2xl border border-slate-200 bg-white p-5 shadow-soft dark:border-slate-700 dark:bg-surface-darkCard">
-        <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-100">Add task</h2>
+        <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-100">Add habit</h2>
         <p className="mt-1 text-sm text-slate-500">Day: {day.toUpperCase()}</p>
 
         <form onSubmit={handleSubmit} className="mt-4 space-y-3">
@@ -57,63 +61,57 @@ const AddTaskModal = ({ day, onClose, onSubmit, disabled }: AddTaskModalProps) =
             <input
               autoFocus
               value={title}
-              onChange={(e) => setTitle(e.target.value)}
-              className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm outline-none ring-[var(--primary-color)] focus:ring-2 dark:border-slate-600 dark:bg-slate-900"
-              placeholder="Task title"
+              onChange={(event) => setTitle(event.target.value)}
+              className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm outline-none ring-[var(--secondary-color)] focus:ring-2 dark:border-slate-600 dark:bg-slate-900"
+              placeholder="Habit title"
               disabled={disabled}
             />
           </label>
 
           <label className="block">
-            <span className="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-200">
-              Description (optional)
-            </span>
+            <span className="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-200">Description</span>
             <textarea
               value={description}
-              onChange={(e) => setDescription(e.target.value)}
-              className="h-24 w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm outline-none ring-[var(--primary-color)] focus:ring-2 dark:border-slate-600 dark:bg-slate-900"
-              placeholder="Add extra context"
+              onChange={(event) => setDescription(event.target.value)}
+              className="h-20 w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm outline-none ring-[var(--secondary-color)] focus:ring-2 dark:border-slate-600 dark:bg-slate-900"
+              placeholder="Optional details"
               disabled={disabled}
             />
           </label>
 
-          <label className="block">
-            <span className="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-200">Points</span>
-            <input
-              type="number"
-              min={0}
-              value={points}
-              onChange={(e) => setPoints(Number(e.target.value))}
-              className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm outline-none ring-[var(--primary-color)] focus:ring-2 dark:border-slate-600 dark:bg-slate-900"
-              disabled={disabled}
-            />
-          </label>
+          <div className="grid gap-3 sm:grid-cols-2">
+            <label className="block">
+              <span className="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-200">Points</span>
+              <input
+                type="number"
+                min={0}
+                value={points}
+                onChange={(event) => setPoints(Number(event.target.value))}
+                className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm dark:border-slate-600 dark:bg-slate-900"
+                disabled={disabled}
+              />
+            </label>
+            <label className="block">
+              <span className="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-200">
+                Target Duration (min)
+              </span>
+              <input
+                type="number"
+                min={0}
+                value={targetDurationMin}
+                onChange={(event) => setTargetDurationMin(Number(event.target.value))}
+                className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm dark:border-slate-600 dark:bg-slate-900"
+                disabled={disabled}
+              />
+            </label>
+          </div>
 
-          <fieldset className="rounded-lg border border-slate-200 p-3 dark:border-slate-700">
-            <legend className="px-1 text-xs font-semibold uppercase tracking-wide text-slate-500">Priority</legend>
-            <div className="mt-1 flex gap-3 text-sm">
-              <label className="flex items-center gap-2">
-                <input
-                  type="radio"
-                  checked={priority === 'normal'}
-                  onChange={() => setPriority('normal')}
-                  disabled={disabled}
-                />
-                Normal
-              </label>
-              <label className="flex items-center gap-2">
-                <input
-                  type="radio"
-                  checked={priority === 'important'}
-                  onChange={() => setPriority('important')}
-                  disabled={disabled}
-                />
-                Important (!)
-              </label>
-            </div>
-          </fieldset>
+          <div>
+            <span className="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-200">Habit Type</span>
+            <RecurringHabitToggle value={habitType} onChange={setHabitType} />
+          </div>
 
-          <div className="flex justify-end gap-2 pt-2">
+          <div className="flex justify-end gap-2 pt-1">
             <button
               type="button"
               onClick={onClose}
@@ -127,7 +125,7 @@ const AddTaskModal = ({ day, onClose, onSubmit, disabled }: AddTaskModalProps) =
               className="rounded-lg px-4 py-2 text-sm font-semibold text-white hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
               style={{ backgroundColor: 'var(--primary-color)' }}
             >
-              Add task
+              Add
             </button>
           </div>
         </form>

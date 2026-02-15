@@ -1,5 +1,5 @@
-import { SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable';
 import { useDroppable } from '@dnd-kit/core';
+import { SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable';
 import clsx from 'clsx';
 import TaskCard from './TaskCard';
 import type { DayId, Task } from '../types/habit';
@@ -15,8 +15,14 @@ type DayColumnProps = {
   onUpdateTask: (
     day: DayId,
     taskId: string,
-    patch: Partial<Pick<Task, 'title' | 'description' | 'points' | 'completed' | 'priority'>>
+    patch: Partial<
+      Pick<
+        Task,
+        'title' | 'description' | 'points' | 'priority' | 'completed' | 'targetDurationMin' | 'completedDurationMin'
+      >
+    >
   ) => void;
+  onUpdateDuration: (day: DayId, taskId: string, completedDurationMin: number) => void;
 };
 
 const DayColumn = ({
@@ -27,7 +33,8 @@ const DayColumn = ({
   onAddTask,
   onToggleTask,
   onDeleteTask,
-  onUpdateTask
+  onUpdateTask,
+  onUpdateDuration
 }: DayColumnProps) => {
   const { setNodeRef, isOver } = useDroppable({
     id: `column-${day}`,
@@ -39,7 +46,7 @@ const DayColumn = ({
       ref={setNodeRef}
       className={clsx(
         'rounded-xl border border-slate-200 bg-surface-card p-3 transition dark:border-slate-700 dark:bg-surface-darkCard',
-        isOver && 'border-[var(--primary-color)]/60 bg-[var(--accent-color)]/15'
+        isOver && 'border-[var(--secondary-color)]/70 bg-[var(--secondary-color)]/10'
       )}
     >
       <div className="mb-3 flex items-center justify-between">
@@ -50,7 +57,7 @@ const DayColumn = ({
           type="button"
           onClick={() => onAddTask(day)}
           disabled={readOnly}
-          className="rounded-md px-2 py-1 text-xs font-semibold text-white transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
+          className="rounded-md px-2 py-1 text-xs font-semibold text-white transition hover:opacity-90 disabled:opacity-50"
           style={{ backgroundColor: 'var(--primary-color)' }}
         >
           + Add
@@ -68,12 +75,13 @@ const DayColumn = ({
               onToggle={onToggleTask}
               onDelete={onDeleteTask}
               onUpdate={onUpdateTask}
+              onUpdateDuration={onUpdateDuration}
             />
           ))}
 
           {tasks.length === 0 ? (
             <div className="rounded-lg border border-dashed border-slate-300 p-3 text-center text-xs text-slate-500 dark:border-slate-600 dark:text-slate-400">
-              No tasks yet
+              No habits yet
             </div>
           ) : null}
         </div>

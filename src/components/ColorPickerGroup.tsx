@@ -1,8 +1,8 @@
-import type { ColorSettings } from '../types/habit';
+import type { ThemeColors } from '../types/habit';
 
 type ColorPickerGroupProps = {
-  colors: ColorSettings;
-  onColorChange: <K extends keyof ColorSettings>(key: K, value: ColorSettings[K]) => void;
+  colors: ThemeColors;
+  onColorChange: <K extends keyof ThemeColors>(key: K, value: ThemeColors[K]) => void;
 };
 
 const ColorPickerGroup = ({ colors, onColorChange }: ColorPickerGroupProps) => {
@@ -17,11 +17,11 @@ const ColorPickerGroup = ({ colors, onColorChange }: ColorPickerGroupProps) => {
         />
       </label>
       <label className="flex items-center justify-between gap-2 rounded-lg border border-slate-200 px-3 py-2 dark:border-slate-700">
-        <span className="text-sm text-slate-700 dark:text-slate-200">Accent</span>
+        <span className="text-sm text-slate-700 dark:text-slate-200">Secondary</span>
         <input
           type="color"
-          value={colors.accentColor}
-          onChange={(event) => onColorChange('accentColor', event.target.value)}
+          value={colors.secondaryColor}
+          onChange={(event) => onColorChange('secondaryColor', event.target.value)}
         />
       </label>
       <label className="flex items-center justify-between gap-2 rounded-lg border border-slate-200 px-3 py-2 dark:border-slate-700">

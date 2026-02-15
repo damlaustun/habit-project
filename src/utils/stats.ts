@@ -1,26 +1,29 @@
-import type { DayId, WeeklyPlan } from '../types/habit';
+import type { BookEntry, BudgetMonth, DayId, HabitItem, WeeklyPlan, WorkoutProgram } from '../types/habit';
+
+export const getAllHabits = (plan: WeeklyPlan): HabitItem[] => {
+  return Object.values(plan.days).flatMap((day) => day.habits);
+};
 
 export const getTotalCompletedPoints = (plan: WeeklyPlan): number => {
-  return Object.values(plan.days)
-    .flatMap((day) => day.tasks)
-    .filter((task) => task.completed)
-    .reduce((sum, task) => sum + task.points, 0);
+  return getAllHabits(plan)
+    .filter((habit) => habit.completed)
+    .reduce((sum, habit) => sum + habit.points, 0);
 };
 
 export const getCompletedPointsForDay = (plan: WeeklyPlan, day: DayId): number => {
-  return plan.days[day].tasks
-    .filter((task) => task.completed)
-    .reduce((sum, task) => sum + task.points, 0);
+  return plan.days[day].habits
+    .filter((habit) => habit.completed)
+    .reduce((sum, habit) => sum + habit.points, 0);
 };
 
 export const getTaskCounts = (plan: WeeklyPlan) => {
-  const allTasks = Object.values(plan.days).flatMap((day) => day.tasks);
-  const completed = allTasks.filter((task) => task.completed).length;
+  const allHabits = getAllHabits(plan);
+  const completed = allHabits.filter((habit) => habit.completed).length;
 
   return {
     completed,
-    total: allTasks.length,
-    percent: allTasks.length === 0 ? 0 : Math.round((completed / allTasks.length) * 100)
+    total: allHabits.length,
+    percent: allHabits.length === 0 ? 0 : Math.round((completed / allHabits.length) * 100)
   };
 };
 
@@ -28,5 +31,51 @@ export const toProgressPercent = (value: number, goal: number): number => {
   if (goal <= 0) {
     return 0;
   }
+
   return Math.min(100, Math.round((value / goal) * 100));
+};
+
+export const getBookPagesRead = (book: BookEntry): number => {
+  return Object.values(book.pagesLog).reduce((sum, pages) => sum + pages, 0);
+};
+
+export const getBookProgress = (book: BookEntry) => {
+  const pagesRead = getBookPagesRead(book);
+  const total = Math.max(1, book.totalPages);
+  const percent = Math.min(100, Math.round((pagesRead / total) * 100));
+  const remaining = Math.max(0, total - pagesRead);
+
+  const start = new Date(book.startDate);
+  const targetFinish = new Date(book.targetFinishDate);
+  const now = new Date();
+
+  const elapsedDays = Math.max(0, Math.ceil((now.getTime() - start.getTime()) / 86400000));
+  const totalPlanDays = Math.max(1, Math.ceil((targetFinish.getTime() - start.getTime()) / 86400000));
+  const expectedByTimeline = Math.round((Math.min(elapsedDays, totalPlanDays) / totalPlanDays) * total);
+  const expectedByDailyGoal = elapsedDays * Math.max(0, book.dailyPageGoal);
+  const expectedPages = Math.min(total, Math.max(expectedByTimeline, expectedByDailyGoal));
+  const onTrack = pagesRead >= expectedPages;
+
+  return { percent, remaining, onTrack, pagesRead };
+};
+
+export const getWorkoutProgress = (program: WorkoutProgram) => {
+  const all = Object.values(program.days).flatMap((items) => items);
+  const completed = all.filter((item) => item.completed).length;
+  const total = all.length;
+  const percent = total === 0 ? 0 : Math.round((completed / total) * 100);
+  return { completed, total, percent };
+};
+
+export const getBudgetSummary = (month: BudgetMonth) => {
+  const totalExpenses = month.expenses.reduce((sum, expense) => sum + expense.amount, 0);
+  const remaining = month.income - totalExpenses;
+  const savings = Math.max(0, remaining);
+
+  return {
+    income: month.income,
+    totalExpenses,
+    remaining,
+    savings
+  };
 };

@@ -1,12 +1,19 @@
+import type { DayId } from '../types/habit';
+
 export const uid = (): string => {
   const partA = Math.random().toString(36).slice(2, 8);
   const partB = Date.now().toString(36).slice(-6);
   return `${partB}-${partA}`;
 };
 
+const toStartOfDay = (date: Date): Date => {
+  const clone = new Date(date);
+  clone.setHours(0, 0, 0, 0);
+  return clone;
+};
+
 const getISOWeekData = (date: Date): { year: number; week: number } => {
-  const target = new Date(date);
-  target.setHours(0, 0, 0, 0);
+  const target = toStartOfDay(date);
   target.setDate(target.getDate() + 3 - ((target.getDay() + 6) % 7));
 
   const firstThursday = new Date(target.getFullYear(), 0, 4);
@@ -42,15 +49,18 @@ const getDateFromWeekId = (weekId: string): Date => {
     simple.setDate(simple.getDate() + 8 - dow);
   }
 
-  simple.setHours(0, 0, 0, 0);
-  return simple;
+  return toStartOfDay(simple);
 };
 
-export const getWeekLabelFromId = (weekId: string): string => {
+export const getWeekRangeFromId = (weekId: string): { monday: Date; sunday: Date } => {
   const monday = getDateFromWeekId(weekId);
   const sunday = new Date(monday);
   sunday.setDate(monday.getDate() + 6);
+  return { monday, sunday };
+};
 
+export const getWeekLabelFromId = (weekId: string): string => {
+  const { monday, sunday } = getWeekRangeFromId(weekId);
   const formatter = new Intl.DateTimeFormat(undefined, { month: 'short', day: 'numeric' });
   return `${formatter.format(monday)} - ${formatter.format(sunday)}`;
 };
@@ -64,15 +74,17 @@ export const addWeeksToId = (weekId: string, delta: number): string => {
 export const compareWeekIds = (a: string, b: string): number => {
   const aw = parseWeekId(a);
   const bw = parseWeekId(b);
+
   if (aw.year !== bw.year) {
     return aw.year - bw.year;
   }
+
   return aw.week - bw.week;
 };
 
-export const getTodayDayId = (): import('../types/habit').DayId => {
+export const getTodayDayId = (): DayId => {
   const day = new Date().getDay();
-  const map: Record<number, import('../types/habit').DayId> = {
+  const map: Record<number, DayId> = {
     0: 'sun',
     1: 'mon',
     2: 'tue',
@@ -82,4 +94,23 @@ export const getTodayDayId = (): import('../types/habit').DayId => {
     6: 'sat'
   };
   return map[day];
+};
+
+export const dayIdToIndex = (dayId: DayId): number => {
+  const map: Record<DayId, number> = {
+    mon: 0,
+    tue: 1,
+    wed: 2,
+    thu: 3,
+    fri: 4,
+    sat: 5,
+    sun: 6
+  };
+
+  return map[dayId];
+};
+
+export const getCurrentMonthKey = (): string => {
+  const now = new Date();
+  return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
 };

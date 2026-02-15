@@ -4,7 +4,7 @@
 
 :root {
   --primary-color: #0f766e;
-  --accent-color: #0ea5a3;
+  --secondary-color: #0ea5a3;
   --app-background: #f6f7f9;
   color-scheme: light;
 }
@@ -21,16 +21,16 @@ body {
   margin: 0;
   font-family: 'Plus Jakarta Sans', 'Segoe UI', sans-serif;
   background:
-    radial-gradient(circle at top right, color-mix(in srgb, var(--accent-color) 26%, transparent) 0%, transparent 40%),
-    radial-gradient(circle at 10% 15%, color-mix(in srgb, var(--primary-color) 16%, transparent) 0%, transparent 28%),
+    radial-gradient(circle at top right, color-mix(in srgb, var(--secondary-color) 24%, transparent) 0%, transparent 44%),
+    radial-gradient(circle at 10% 18%, color-mix(in srgb, var(--primary-color) 16%, transparent) 0%, transparent 30%),
     var(--app-background);
-  transition: background 350ms ease, color 250ms ease;
+  transition: background 380ms ease, color 250ms ease;
 }
 
 .dark body {
   background:
-    radial-gradient(circle at top right, color-mix(in srgb, var(--accent-color) 28%, #0f1720) 0%, #0f1720 40%),
-    radial-gradient(circle at 10% 15%, color-mix(in srgb, var(--primary-color) 20%, #0f1720) 0%, #0f1720 28%),
+    radial-gradient(circle at top right, color-mix(in srgb, var(--secondary-color) 26%, #0f1720) 0%, #0f1720 44%),
+    radial-gradient(circle at 10% 18%, color-mix(in srgb, var(--primary-color) 18%, #0f1720) 0%, #0f1720 30%),
     #0f1720;
 }
 
@@ -45,6 +45,21 @@ body {
   }
 }
 
+@keyframes popIn {
+  from {
+    opacity: 0;
+    transform: translateY(4px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
 .animate-slideIn {
   animation: slideIn 240ms ease;
+}
+
+.animate-popIn {
+  animation: popIn 220ms ease-out;
 }

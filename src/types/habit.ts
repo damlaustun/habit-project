@@ -2,22 +2,42 @@ export const DAY_ORDER = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'] as co
 
 export type DayId = (typeof DAY_ORDER)[number];
 
-export type TaskPriority = 'normal' | 'important';
+export type HabitPriority = 'normal' | 'important';
 
-export type Task = {
+export type HabitType = 'normal' | 'important' | 'recurring';
+
+export type HabitItem = {
   id: string;
   title: string;
   description?: string;
   points: number;
   completed: boolean;
-  priority: TaskPriority;
+  completedAt?: string;
+  completionLog: string[];
+  priority: HabitPriority;
+  recurringId?: string;
+  isRecurringInstance: boolean;
+  targetDurationMin?: number;
+  completedDurationMin: number;
   createdAt: string;
+  updatedAt: string;
 };
 
-export type DayPlan = {
+export type PlannerItem = {
+  id: string;
+  title: string;
+  description?: string;
+  eventTime?: string;
+  completed: boolean;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type DayContainerData = {
   day: DayId;
   label: string;
-  tasks: Task[];
+  habits: HabitItem[];
+  agenda: PlannerItem[];
 };
 
 export type WeeklyPlan = {
@@ -25,36 +45,167 @@ export type WeeklyPlan = {
   weekId: string;
   weekLabel: string;
   createdAt: string;
-  days: Record<DayId, DayPlan>;
+  updatedAt: string;
+  days: Record<DayId, DayContainerData>;
 };
 
-export type TaskInput = {
+export type RecurringHabitTemplate = {
+  id: string;
   title: string;
   description?: string;
   points: number;
-  priority: TaskPriority;
+  priority: HabitPriority;
+  targetDurationMin?: number;
+  createdAt: string;
+  startsWeekId: string;
+  startsDayId: DayId;
+  active: boolean;
+};
+
+export type HabitOverride = {
+  recurringId: string;
+  weekId: string;
+  day: DayId;
+  deleted?: boolean;
+  patch?: Partial<
+    Pick<
+      HabitItem,
+      | 'title'
+      | 'description'
+      | 'points'
+      | 'priority'
+      | 'targetDurationMin'
+      | 'completedDurationMin'
+      | 'completed'
+      | 'completedAt'
+      | 'completionLog'
+    >
+  >;
+  updatedAt: string;
+};
+
+export type HabitHistoryEventType =
+  | 'created'
+  | 'completed'
+  | 'uncompleted'
+  | 'duration_updated'
+  | 'updated'
+  | 'deleted'
+  | 'generated_recurring';
+
+export type HabitHistoryItem = {
+  id: string;
+  habitId: string;
+  weekId: string;
+  day: DayId;
+  titleSnapshot: string;
+  eventType: HabitHistoryEventType;
+  timestamp: string;
+};
+
+export type HabitInput = {
+  title: string;
+  description?: string;
+  points: number;
+  habitType: HabitType;
+  targetDurationMin?: number;
+};
+
+export type PlannerInput = {
+  title: string;
+  description?: string;
+  eventTime?: string;
+};
+
+export type BookEntry = {
+  id: string;
+  title: string;
+  author: string;
+  startDate: string;
+  targetFinishDate: string;
+  dailyPageGoal: number;
+  totalPages: number;
+  notes: string;
+  quotes: string[];
+  pagesLog: Record<string, number>;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type WorkoutItem = {
+  id: string;
+  title: string;
+  reps?: string;
+  durationMin?: number;
+  completed: boolean;
+};
+
+export type WorkoutProgram = {
+  id: string;
+  name: string;
+  days: Record<DayId, WorkoutItem[]>;
+  createdAt: string;
+};
+
+export type WishItem = {
+  id: string;
+  name: string;
+  price?: number;
+  purchased: boolean;
+};
+
+export type WishList = {
+  id: string;
+  name: string;
+  items: WishItem[];
+};
+
+export type ExpenseItem = {
+  id: string;
+  name: string;
+  amount: number;
+  category?: string;
+  createdAt: string;
+};
+
+export type BudgetMonth = {
+  monthKey: string;
+  income: number;
+  expenses: ExpenseItem[];
+};
+
+export type MediaType = 'movie' | 'tv' | 'book';
+
+export type MediaItem = {
+  id: string;
+  type: MediaType;
+  title: string;
+  genre?: string;
+  notes?: string;
+  completed: boolean;
+  createdAt: string;
 };
 
 export type ThemeMode = 'light' | 'dark' | 'system';
 
-export type ThemeSettings = {
-  mode: ThemeMode;
-};
-
-export type ColorSettings = {
+export type ThemeColors = {
   primaryColor: string;
-  accentColor: string;
+  secondaryColor: string;
   backgroundColor: string;
 };
 
-export type GoalSettings = {
-  dailyGoal: number;
-  weeklyGoal: number;
+export type UserProfile = {
+  name: string;
+  avatar: string;
 };
 
-export type AppSettings = {
-  themeSettings: ThemeSettings;
-  colorSettings: ColorSettings;
-  goals: GoalSettings;
-  lockPastWeeks: boolean;
+export type UserAuthState = {
+  status: 'loading' | 'signed_out' | 'signed_in';
+  userId: string | null;
+  email: string | null;
 };
+
+// Backward-compat aliases used by existing components
+export type Task = HabitItem;
+export type TaskInput = HabitInput;
+export type DayPlan = DayContainerData;

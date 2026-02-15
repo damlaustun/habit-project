@@ -1,24 +1,31 @@
-import ThemeSelector from './ThemeSelector';
-import ColorPickerGroup from './ColorPickerGroup';
-import type { AppSettings, ThemeMode } from '../types/habit';
+import ThemeCustomizer from './ThemeCustomizer';
+import type { ThemeColors, ThemeMode } from '../types/habit';
 
 type SettingsPanelProps = {
   open: boolean;
-  settings: AppSettings;
+  themeMode: ThemeMode;
+  themeColors: ThemeColors;
+  dailyGoal: number;
+  weeklyGoal: number;
+  lockPastWeeks: boolean;
   onClose: () => void;
-  onThemeChange: (mode: ThemeMode) => void;
-  onColorChange: (key: 'primaryColor' | 'accentColor' | 'backgroundColor', value: string) => void;
+  onThemeModeChange: (mode: ThemeMode) => void;
+  onThemeColorChange: <K extends keyof ThemeColors>(key: K, value: ThemeColors[K]) => void;
   onDailyGoalChange: (value: number) => void;
   onWeeklyGoalChange: (value: number) => void;
-  onLockPastWeeksChange: (enabled: boolean) => void;
+  onLockPastWeeksChange: (value: boolean) => void;
 };
 
 const SettingsPanel = ({
   open,
-  settings,
+  themeMode,
+  themeColors,
+  dailyGoal,
+  weeklyGoal,
+  lockPastWeeks,
   onClose,
-  onThemeChange,
-  onColorChange,
+  onThemeModeChange,
+  onThemeColorChange,
   onDailyGoalChange,
   onWeeklyGoalChange,
   onLockPastWeeksChange
@@ -43,49 +50,51 @@ const SettingsPanel = ({
 
         <div className="mt-4 space-y-5">
           <section>
-            <h3 className="mb-2 text-sm font-semibold uppercase tracking-wide text-slate-500">Theme mode</h3>
-            <ThemeSelector mode={settings.themeSettings.mode} onChange={onThemeChange} />
+            <h3 className="mb-2 text-xs font-semibold uppercase tracking-wide text-slate-500">
+              Theme & Colors
+            </h3>
+            <ThemeCustomizer
+              mode={themeMode}
+              colors={themeColors}
+              onModeChange={onThemeModeChange}
+              onColorChange={onThemeColorChange}
+            />
           </section>
 
           <section>
-            <h3 className="mb-2 text-sm font-semibold uppercase tracking-wide text-slate-500">Colors</h3>
-            <ColorPickerGroup colors={settings.colorSettings} onColorChange={onColorChange} />
-          </section>
-
-          <section>
-            <h3 className="mb-2 text-sm font-semibold uppercase tracking-wide text-slate-500">Point goals</h3>
+            <h3 className="mb-2 text-xs font-semibold uppercase tracking-wide text-slate-500">Point Goals</h3>
             <div className="grid gap-3 sm:grid-cols-2">
               <label className="rounded-lg border border-slate-200 p-3 dark:border-slate-700">
                 <span className="mb-1 block text-sm text-slate-700 dark:text-slate-200">Daily goal</span>
                 <input
                   type="number"
                   min={0}
-                  value={settings.goals.dailyGoal}
+                  value={dailyGoal}
                   onChange={(event) => onDailyGoalChange(Number(event.target.value))}
-                  className="w-full rounded-md border border-slate-300 px-2 py-1.5 text-sm dark:border-slate-600 dark:bg-slate-900"
+                  className="w-full rounded border border-slate-300 px-2 py-1 text-sm dark:border-slate-600 dark:bg-slate-900"
                 />
               </label>
+
               <label className="rounded-lg border border-slate-200 p-3 dark:border-slate-700">
                 <span className="mb-1 block text-sm text-slate-700 dark:text-slate-200">Weekly goal</span>
                 <input
                   type="number"
                   min={0}
-                  value={settings.goals.weeklyGoal}
+                  value={weeklyGoal}
                   onChange={(event) => onWeeklyGoalChange(Number(event.target.value))}
-                  className="w-full rounded-md border border-slate-300 px-2 py-1.5 text-sm dark:border-slate-600 dark:bg-slate-900"
+                  className="w-full rounded border border-slate-300 px-2 py-1 text-sm dark:border-slate-600 dark:bg-slate-900"
                 />
               </label>
             </div>
           </section>
 
           <section className="rounded-lg border border-slate-200 p-3 dark:border-slate-700">
-            <label className="flex items-center justify-between gap-3">
-              <span className="text-sm text-slate-700 dark:text-slate-200">Read-only completed (past) weeks</span>
+            <label className="flex items-center justify-between gap-3 text-sm text-slate-700 dark:text-slate-200">
+              <span>Set past weeks as read-only</span>
               <input
                 type="checkbox"
-                checked={settings.lockPastWeeks}
+                checked={lockPastWeeks}
                 onChange={(event) => onLockPastWeeksChange(event.target.checked)}
-                className="h-4 w-4"
               />
             </label>
           </section>
