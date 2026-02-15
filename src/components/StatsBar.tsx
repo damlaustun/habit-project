@@ -16,7 +16,7 @@ const StatsBar = ({ completed, total, percent }: StatsBarProps) => {
       <div className="mt-3 h-2 overflow-hidden rounded-full bg-slate-200 dark:bg-slate-700">
         <div
           className="h-full rounded-full transition-all duration-300"
-          style={{ width: `${percent}%`, backgroundColor: 'var(--primary-color)' }}
+          style={{ width: `${percent}%`, backgroundColor: 'var(--secondary-color)' }}
         />
       </div>
     </section>

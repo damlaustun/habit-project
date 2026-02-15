@@ -138,6 +138,7 @@ export type WorkoutItem = {
 export type WorkoutProgram = {
   id: string;
   name: string;
+  description?: string;
   days: Record<DayId, WorkoutItem[]>;
   createdAt: string;
 };
@@ -187,7 +188,6 @@ export type ThemeColors = {
   primaryColor: string;
   secondaryColor: string;
   backgroundColor: string;
-  panelColor: string;
   cardColor: string;
 };
 

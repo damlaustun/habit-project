@@ -162,7 +162,7 @@ const TaskCard = ({
               type="button"
               onClick={saveEdit}
               className="rounded-md px-2 py-1 text-xs font-semibold text-white"
-              style={{ backgroundColor: 'var(--primary-color)' }}
+              style={{ backgroundColor: 'var(--secondary-color)' }}
             >
               Save
             </button>
@@ -200,7 +200,7 @@ const TaskCard = ({
                 />
               ) : null}
 
-              <p className="mt-2 text-xs font-semibold uppercase tracking-wide text-[var(--primary-color)]">
+              <p className="mt-2 text-xs font-semibold uppercase tracking-wide text-[var(--secondary-color)]">
                 {task.points} pts
               </p>
             </div>

@@ -58,7 +58,7 @@ const DayColumn = ({
           onClick={() => onAddTask(day)}
           disabled={readOnly}
           className="rounded-md px-2 py-1 text-xs font-semibold text-white transition hover:opacity-90 disabled:opacity-50"
-          style={{ backgroundColor: 'var(--primary-color)' }}
+          style={{ backgroundColor: 'var(--secondary-color)' }}
         >
           + Add
         </button>

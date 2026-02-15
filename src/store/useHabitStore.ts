@@ -160,11 +160,23 @@ type HabitStore = CloudAppState & {
     totalPages: number;
     notes?: string;
   }) => void;
+  updateBook: (
+    bookId: string,
+    patch: Partial<
+      Pick<
+        BookEntry,
+        'title' | 'author' | 'startDate' | 'targetFinishDate' | 'dailyPageGoal' | 'totalPages' | 'notes'
+      >
+    >
+  ) => void;
+  deleteBook: (bookId: string) => void;
   logBookPages: (bookId: string, date: string, pages: number) => void;
   updateBookNotes: (bookId: string, notes: string) => void;
   addBookQuote: (bookId: string, quote: string) => void;
 
   addWorkoutProgram: (name: string) => void;
+  updateWorkoutProgram: (programId: string, patch: { name?: string; description?: string }) => void;
+  deleteWorkoutProgram: (programId: string) => void;
   addWorkoutItem: (
     programId: string,
     day: DayId,
@@ -212,7 +224,6 @@ const defaultThemeSettings: ThemeSettingsSlice = {
     primaryColor: '#0f766e',
     secondaryColor: '#0ea5a3',
     backgroundColor: '#f6f7f9',
-    panelColor: '#ffffff',
     cardColor: '#ffffff'
   },
   fontFamily: 'system'
@@ -636,7 +647,6 @@ const fromCloudState = (payload: Partial<CloudAppState>): CloudAppState => {
         accentColor?: string;
         secondaryColor?: string;
         backgroundColor?: string;
-        panelColor?: string;
         cardColor?: string;
       };
     };
@@ -664,11 +674,6 @@ const fromCloudState = (payload: Partial<CloudAppState>): CloudAppState => {
         legacyThemePayload.themeColors?.backgroundColor ??
         legacyThemePayload.settings?.colorSettings?.backgroundColor ??
         defaults.themeSettings.colors.backgroundColor,
-      panelColor:
-        incomingTheme?.colors?.panelColor ??
-        legacyThemePayload.themeColors?.panelColor ??
-        legacyThemePayload.settings?.colorSettings?.panelColor ??
-        defaults.themeSettings.colors.panelColor,
       cardColor:
         incomingTheme?.colors?.cardColor ??
         legacyThemePayload.themeColors?.cardColor ??
@@ -1364,6 +1369,35 @@ export const useHabitStore = create<HabitStore>()(
             ]
           }
         })),
+      updateBook: (bookId, patch) =>
+        set((state) => ({
+          books: {
+            ...state.books,
+            entries: state.books.entries.map((book) =>
+              book.id === bookId
+                ? {
+                    ...book,
+                    title: patch.title === undefined ? book.title : patch.title.trim() || book.title,
+                    author: patch.author === undefined ? book.author : patch.author.trim() || book.author,
+                    startDate: patch.startDate ?? book.startDate,
+                    targetFinishDate: patch.targetFinishDate ?? book.targetFinishDate,
+                    dailyPageGoal:
+                      patch.dailyPageGoal === undefined ? book.dailyPageGoal : clampNumber(patch.dailyPageGoal),
+                    totalPages: patch.totalPages === undefined ? book.totalPages : clampNumber(patch.totalPages),
+                    notes: patch.notes === undefined ? book.notes : patch.notes.trim(),
+                    updatedAt: new Date().toISOString()
+                  }
+                : book
+            )
+          }
+        })),
+      deleteBook: (bookId) =>
+        set((state) => ({
+          books: {
+            ...state.books,
+            entries: state.books.entries.filter((book) => book.id !== bookId)
+          }
+        })),
       logBookPages: (bookId, date, pages) =>
         set((state) => ({
           books: {
@@ -1421,6 +1455,7 @@ export const useHabitStore = create<HabitStore>()(
               {
                 id: uid(),
                 name: name.trim(),
+                description: '',
                 createdAt: new Date().toISOString(),
                 days: {
                   mon: [],
@@ -1434,6 +1469,29 @@ export const useHabitStore = create<HabitStore>()(
               },
               ...state.sports.programs
             ]
+          }
+        })),
+      updateWorkoutProgram: (programId, patch) =>
+        set((state) => ({
+          sports: {
+            ...state.sports,
+            programs: state.sports.programs.map((program) =>
+              program.id === programId
+                ? {
+                    ...program,
+                    name: patch.name === undefined ? program.name : patch.name.trim() || program.name,
+                    description:
+                      patch.description === undefined ? program.description : patch.description.trim()
+                  }
+                : program
+            )
+          }
+        })),
+      deleteWorkoutProgram: (programId) =>
+        set((state) => ({
+          sports: {
+            ...state.sports,
+            programs: state.sports.programs.filter((program) => program.id !== programId)
           }
         })),
       addWorkoutItem: (programId, day, input) =>

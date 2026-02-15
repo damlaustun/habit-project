@@ -187,7 +187,7 @@ const AddTaskModal = ({ day, onClose, onSubmit, disabled }: AddTaskModalProps) =
               type="submit"
               disabled={disabled}
               className="rounded-lg px-4 py-2 text-sm font-semibold text-white hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
-              style={{ backgroundColor: 'var(--primary-color)' }}
+              style={{ backgroundColor: 'var(--secondary-color)' }}
             >
               Add
             </button>

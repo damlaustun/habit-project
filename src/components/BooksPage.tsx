@@ -13,10 +13,20 @@ type BooksPageProps = {
     totalPages: number;
     notes?: string;
   }) => void;
+  onUpdateBook: (
+    bookId: string,
+    patch: Partial<
+      Pick<
+        BookEntry,
+        'title' | 'author' | 'startDate' | 'targetFinishDate' | 'dailyPageGoal' | 'totalPages' | 'notes'
+      >
+    >
+  ) => void;
+  onDeleteBook: (bookId: string) => void;
   onOpenBook: (bookId: string) => void;
 };
 
-const BooksPage = ({ books, onAddBook, onOpenBook }: BooksPageProps) => {
+const BooksPage = ({ books, onAddBook, onUpdateBook, onDeleteBook, onOpenBook }: BooksPageProps) => {
   const [adding, setAdding] = useState(false);
   const [title, setTitle] = useState('');
   const [author, setAuthor] = useState('');
@@ -34,7 +44,7 @@ const BooksPage = ({ books, onAddBook, onOpenBook }: BooksPageProps) => {
           type="button"
           onClick={() => setAdding((prev) => !prev)}
           className="rounded-md px-3 py-1.5 text-sm font-semibold text-white"
-          style={{ backgroundColor: 'var(--primary-color)' }}
+          style={{ backgroundColor: 'var(--secondary-color)' }}
         >
           {adding ? 'Close' : 'Add New Book'}
         </button>
@@ -65,52 +75,68 @@ const BooksPage = ({ books, onAddBook, onOpenBook }: BooksPageProps) => {
             setAdding(false);
           }}
         >
-          <input
-            value={title}
-            onChange={(event) => setTitle(event.target.value)}
-            placeholder="Title"
-            className="rounded border border-slate-300 px-2 py-1.5 text-sm dark:border-slate-600 dark:bg-slate-900"
-          />
-          <input
-            value={author}
-            onChange={(event) => setAuthor(event.target.value)}
-            placeholder="Author"
-            className="rounded border border-slate-300 px-2 py-1.5 text-sm dark:border-slate-600 dark:bg-slate-900"
-          />
-          <input
-            type="date"
-            value={startDate}
-            onChange={(event) => setStartDate(event.target.value)}
-            className="rounded border border-slate-300 px-2 py-1.5 text-sm dark:border-slate-600 dark:bg-slate-900"
-          />
-          <input
-            type="date"
-            value={targetFinishDate}
-            onChange={(event) => setTargetFinishDate(event.target.value)}
-            className="rounded border border-slate-300 px-2 py-1.5 text-sm dark:border-slate-600 dark:bg-slate-900"
-          />
-          <input
-            type="number"
-            min={1}
-            value={dailyPageGoal}
-            onChange={(event) => setDailyPageGoal(Number(event.target.value))}
-            placeholder="Daily page goal"
-            className="rounded border border-slate-300 px-2 py-1.5 text-sm dark:border-slate-600 dark:bg-slate-900"
-          />
-          <input
-            type="number"
-            min={1}
-            value={totalPages}
-            onChange={(event) => setTotalPages(Number(event.target.value))}
-            placeholder="Total pages"
-            className="rounded border border-slate-300 px-2 py-1.5 text-sm dark:border-slate-600 dark:bg-slate-900"
-          />
-          <textarea
-            value={notes}
-            onChange={(event) => setNotes(event.target.value)}
-            placeholder="Notes"
-            className="h-20 rounded border border-slate-300 px-2 py-1.5 text-sm dark:border-slate-600 dark:bg-slate-900 sm:col-span-2"
-          />
+          <label className="text-xs text-slate-600 dark:text-slate-300">
+            Title
+            <input
+              value={title}
+              onChange={(event) => setTitle(event.target.value)}
+              className="mt-1 w-full rounded border border-slate-300 px-2 py-1.5 text-sm dark:border-slate-600 dark:bg-slate-900"
+            />
+          </label>
+          <label className="text-xs text-slate-600 dark:text-slate-300">
+            Author
+            <input
+              value={author}
+              onChange={(event) => setAuthor(event.target.value)}
+              className="mt-1 w-full rounded border border-slate-300 px-2 py-1.5 text-sm dark:border-slate-600 dark:bg-slate-900"
+            />
+          </label>
+          <label className="text-xs text-slate-600 dark:text-slate-300">
+            Start day
+            <input
+              type="date"
+              value={startDate}
+              onChange={(event) => setStartDate(event.target.value)}
+              className="mt-1 w-full rounded border border-slate-300 px-2 py-1.5 text-sm dark:border-slate-600 dark:bg-slate-900"
+            />
+          </label>
+          <label className="text-xs text-slate-600 dark:text-slate-300">
+            Finish day
+            <input
+              type="date"
+              value={targetFinishDate}
+              onChange={(event) => setTargetFinishDate(event.target.value)}
+              className="mt-1 w-full rounded border border-slate-300 px-2 py-1.5 text-sm dark:border-slate-600 dark:bg-slate-900"
+            />
+          </label>
+          <label className="text-xs text-slate-600 dark:text-slate-300">
+            Daily page goal
+            <input
+              type="number"
+              min={1}
+              value={dailyPageGoal}
+              onChange={(event) => setDailyPageGoal(Number(event.target.value))}
+              className="mt-1 w-full rounded border border-slate-300 px-2 py-1.5 text-sm dark:border-slate-600 dark:bg-slate-900"
+            />
+          </label>
+          <label className="text-xs text-slate-600 dark:text-slate-300">
+            Total pages
+            <input
+              type="number"
+              min={1}
+              value={totalPages}
+              onChange={(event) => setTotalPages(Number(event.target.value))}
+              className="mt-1 w-full rounded border border-slate-300 px-2 py-1.5 text-sm dark:border-slate-600 dark:bg-slate-900"
+            />
+          </label>
+          <label className="text-xs text-slate-600 dark:text-slate-300 sm:col-span-2">
+            Notes
+            <textarea
+              value={notes}
+              onChange={(event) => setNotes(event.target.value)}
+              className="mt-1 h-20 w-full rounded border border-slate-300 px-2 py-1.5 text-sm dark:border-slate-600 dark:bg-slate-900"
+            />
+          </label>
           <button
             type="submit"
             className="rounded px-3 py-2 text-sm font-semibold text-white sm:col-span-2"
@@ -125,14 +151,56 @@ const BooksPage = ({ books, onAddBook, onOpenBook }: BooksPageProps) => {
         {books.map((book) => {
           const progress = getBookProgress(book);
           return (
-            <button
-              key={book.id}
-              type="button"
-              onClick={() => onOpenBook(book.id)}
-              className="rounded-xl border border-slate-200 bg-[var(--card-color)] p-3 text-left transition hover:shadow dark:border-slate-700"
-            >
-              <p className="font-semibold text-slate-800 dark:text-slate-100">{book.title}</p>
-              <p className="text-xs text-slate-500">{book.author}</p>
+            <article key={book.id} className="rounded-xl border border-slate-200 bg-[var(--card-color)] p-3 dark:border-slate-700">
+              <div className="flex items-start justify-between gap-2">
+                <button type="button" onClick={() => onOpenBook(book.id)} className="min-w-0 flex-1 text-left">
+                  <p className="font-semibold text-slate-800 dark:text-slate-100">{book.title}</p>
+                  <p className="text-xs text-slate-500">{book.author}</p>
+                </button>
+
+                <details className="relative">
+                  <summary className="cursor-pointer list-none rounded border border-slate-300 px-2 py-1 text-xs dark:border-slate-600">
+                    Edit
+                  </summary>
+                  <div className="absolute right-0 z-20 mt-1 w-40 rounded border border-slate-200 bg-[var(--card-color)] p-1 shadow-lg dark:border-slate-700">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const titleNext = window.prompt('Title', book.title);
+                        if (!titleNext) return;
+                        const authorNext = window.prompt('Author', book.author);
+                        if (!authorNext) return;
+                        const startNext = window.prompt('Start day (YYYY-MM-DD)', book.startDate) ?? book.startDate;
+                        const finishNext =
+                          window.prompt('Finish day (YYYY-MM-DD)', book.targetFinishDate) ?? book.targetFinishDate;
+                        const dailyNext =
+                          window.prompt('Daily page goal', String(book.dailyPageGoal)) ?? String(book.dailyPageGoal);
+                        const totalNext =
+                          window.prompt('Total pages', String(book.totalPages)) ?? String(book.totalPages);
+                        onUpdateBook(book.id, {
+                          title: titleNext,
+                          author: authorNext,
+                          startDate: startNext,
+                          targetFinishDate: finishNext,
+                          dailyPageGoal: Number(dailyNext),
+                          totalPages: Number(totalNext)
+                        });
+                      }}
+                      className="block w-full rounded px-2 py-1 text-left text-xs hover:bg-slate-100 dark:hover:bg-slate-800"
+                    >
+                      Edit book
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => onDeleteBook(book.id)}
+                      className="block w-full rounded px-2 py-1 text-left text-xs hover:bg-slate-100 dark:hover:bg-slate-800"
+                    >
+                      Delete book
+                    </button>
+                  </div>
+                </details>
+              </div>
+
               <div className="mt-2 h-1.5 rounded bg-slate-200 dark:bg-slate-700">
                 <div
                   className="h-full rounded"
@@ -142,7 +210,7 @@ const BooksPage = ({ books, onAddBook, onOpenBook }: BooksPageProps) => {
               <p className="mt-2 text-xs text-slate-500">
                 {progress.percent}% • {progress.remaining} pages left • {progress.onTrack ? 'On track' : 'Behind'}
               </p>
-            </button>
+            </article>
           );
         })}
       </div>

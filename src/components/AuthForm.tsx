@@ -107,7 +107,7 @@ const AuthForm = ({ busy, errorMessage, noticeMessage, onLogin, onSignup }: Auth
             type="submit"
             disabled={busy}
             className="w-full rounded-lg py-2 text-sm font-semibold text-white disabled:opacity-60"
-            style={{ backgroundColor: 'var(--primary-color)' }}
+            style={{ backgroundColor: 'var(--secondary-color)' }}
           >
             {busy ? 'Please wait...' : mode === 'login' ? 'Login' : 'Create account'}
           </button>

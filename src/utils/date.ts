@@ -12,15 +12,21 @@ const toStartOfDay = (date: Date): Date => {
   return clone;
 };
 
+const WEEK_MS = 7 * 24 * 60 * 60 * 1000;
+const DAY_MS = 24 * 60 * 60 * 1000;
+
 const getISOWeekData = (date: Date): { year: number; week: number } => {
-  const target = toStartOfDay(date);
-  target.setDate(target.getDate() + 3 - ((target.getDay() + 6) % 7));
+  const utcDate = Date.UTC(date.getFullYear(), date.getMonth(), date.getDate());
+  const weekday = (new Date(utcDate).getUTCDay() + 6) % 7; // 0=Mon ... 6=Sun
+  const thursday = utcDate + (3 - weekday) * DAY_MS;
 
-  const firstThursday = new Date(target.getFullYear(), 0, 4);
-  firstThursday.setDate(firstThursday.getDate() + 3 - ((firstThursday.getDay() + 6) % 7));
+  const isoYear = new Date(thursday).getUTCFullYear();
+  const jan4 = Date.UTC(isoYear, 0, 4);
+  const jan4Weekday = (new Date(jan4).getUTCDay() + 6) % 7;
+  const firstThursday = jan4 + (3 - jan4Weekday) * DAY_MS;
 
-  const week = 1 + Math.round((target.getTime() - firstThursday.getTime()) / 604800000);
-  return { year: target.getFullYear(), week };
+  const week = 1 + Math.round((thursday - firstThursday) / WEEK_MS);
+  return { year: isoYear, week };
 };
 
 export const getWeekIdFromDate = (date: Date): string => {
@@ -31,25 +37,35 @@ export const getWeekIdFromDate = (date: Date): string => {
 export const getCurrentWeekId = (): string => getWeekIdFromDate(new Date());
 
 const parseWeekId = (weekId: string): { year: number; week: number } => {
-  const [yearPart, weekPartRaw] = weekId.split('-W');
+  const match = weekId.match(/^(\d{4})-?W(\d{1,2})$/i);
+  if (!match) {
+    const current = getISOWeekData(new Date());
+    return current;
+  }
+
+  const year = Number(match[1]);
+  const week = Number(match[2]);
+
+  if (!Number.isFinite(year) || !Number.isFinite(week) || week <= 0) {
+    const current = getISOWeekData(new Date());
+    return current;
+  }
+
   return {
-    year: Number(yearPart),
-    week: Number(weekPartRaw)
+    year,
+    week
   };
 };
 
 export const getDateFromWeekId = (weekId: string): Date => {
   const { year, week } = parseWeekId(weekId);
+  const jan4 = Date.UTC(year, 0, 4);
+  const jan4Weekday = (new Date(jan4).getUTCDay() + 6) % 7;
+  const firstMonday = jan4 - jan4Weekday * DAY_MS;
+  const mondayUtc = firstMonday + (week - 1) * WEEK_MS;
+  const mondayDate = new Date(mondayUtc);
 
-  const simple = new Date(year, 0, 4 + (week - 1) * 7);
-  const dow = simple.getDay() || 7;
-  if (dow <= 4) {
-    simple.setDate(simple.getDate() - dow + 1);
-  } else {
-    simple.setDate(simple.getDate() + 8 - dow);
-  }
-
-  return toStartOfDay(simple);
+  return toStartOfDay(new Date(mondayDate.getUTCFullYear(), mondayDate.getUTCMonth(), mondayDate.getUTCDate()));
 };
 
 export const getWeekRangeFromId = (weekId: string): { monday: Date; sunday: Date } => {

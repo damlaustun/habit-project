@@ -19,7 +19,7 @@ import WorkoutPlanner from './components/WorkoutPlanner';
 import { isSupabaseConfigured, supabase } from './lib/supabase';
 import { getCloudStateWeekLabel, useHabitStore } from './store/useHabitStore';
 import type { FontFamilyOption, UserProfile } from './types/habit';
-import { getCurrentMonthKey, getCurrentWeekId, getTodayDayId } from './utils/date';
+import { addWeeksToId, getCurrentMonthKey, getCurrentWeekId, getTodayDayId } from './utils/date';
 import { getCompletedPointsForDay, getTaskCounts, getTotalCompletedPoints } from './utils/stats';
 
 const getFontStack = (font: FontFamilyOption): string => {
@@ -69,8 +69,6 @@ const App = () => {
     getCurrentWeek,
     isCurrentWeekReadOnly,
     setCurrentWeek,
-    goToPreviousWeek,
-    goToNextWeek,
     resetCurrentWeek,
 
     addHabit,
@@ -91,11 +89,15 @@ const App = () => {
     setLockPastWeeks,
 
     addBook,
+    updateBook,
+    deleteBook,
     logBookPages,
     updateBookNotes,
     addBookQuote,
 
     addWorkoutProgram,
+    updateWorkoutProgram,
+    deleteWorkoutProgram,
     addWorkoutItem,
     toggleWorkoutItem,
     updateWorkoutItem,
@@ -153,6 +155,14 @@ const App = () => {
     setCurrentPath(path);
   };
 
+  const goPreviousWeekSafe = () => {
+    setCurrentWeek(addWeeksToId(weeklyPlanner.currentWeekId, -1));
+  };
+
+  const goNextWeekSafe = () => {
+    setCurrentWeek(addWeeksToId(weeklyPlanner.currentWeekId, 1));
+  };
+
   useEffect(() => {
     const onPopState = () => setCurrentPath(window.location.pathname || '/');
     window.addEventListener('popstate', onPopState);
@@ -170,7 +180,7 @@ const App = () => {
     root.style.setProperty('--primary-color', themeSettings.colors.primaryColor);
     root.style.setProperty('--secondary-color', themeSettings.colors.secondaryColor);
     root.style.setProperty('--app-background', themeSettings.colors.backgroundColor);
-    root.style.setProperty('--panel-color', themeSettings.colors.panelColor);
+    root.style.setProperty('--panel-color', themeSettings.colors.primaryColor);
     root.style.setProperty('--card-color', themeSettings.colors.cardColor);
     root.style.setProperty('--app-font-family', getFontStack(themeSettings.fontFamily));
 
@@ -451,8 +461,8 @@ const App = () => {
                   weekId={weeklyPlanner.currentWeekId}
                   weekLabel={weeklyPlanner.currentWeekLabel}
                   isCurrentWeek={isCurrentWeek}
-                  onPrevious={goToPreviousWeek}
-                  onNext={goToNextWeek}
+                  onPrevious={goPreviousWeekSafe}
+                  onNext={goNextWeekSafe}
                   onWeekPick={setCurrentWeek}
                 />
 
@@ -493,6 +503,8 @@ const App = () => {
               <BooksPage
                 books={books.entries}
                 onAddBook={addBook}
+                onUpdateBook={updateBook}
+                onDeleteBook={deleteBook}
                 onOpenBook={(bookId) => navigate(`/books/${encodeURIComponent(bookId)}`)}
               />
             </ModuleLayoutWrapper>
@@ -503,6 +515,8 @@ const App = () => {
               <BookDetailPage
                 book={selectedBook}
                 onBack={() => navigate('/books')}
+                onUpdateBook={updateBook}
+                onDeleteBook={deleteBook}
                 onLogPages={logBookPages}
                 onUpdateNotes={updateBookNotes}
                 onAddQuote={addBookQuote}
@@ -525,6 +539,8 @@ const App = () => {
               <WorkoutPlanner
                 programs={sports.programs}
                 onAddProgram={addWorkoutProgram}
+                onUpdateProgram={updateWorkoutProgram}
+                onDeleteProgram={deleteWorkoutProgram}
                 onAddWorkoutItem={addWorkoutItem}
                 onToggleWorkoutItem={toggleWorkoutItem}
                 onUpdateWorkoutItem={updateWorkoutItem}

@@ -40,7 +40,7 @@ const HabitSection = ({
           onClick={() => onAddHabit(day)}
           disabled={readOnly}
           className="rounded-md px-2 py-1 text-xs font-semibold text-white disabled:opacity-50"
-          style={{ backgroundColor: 'var(--primary-color)' }}
+          style={{ backgroundColor: 'var(--secondary-color)' }}
         >
           + Habit
         </button>

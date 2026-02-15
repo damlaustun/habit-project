@@ -55,7 +55,7 @@ const BudgetDashboard = ({ month, onSetIncome, onAddExpense, onDeleteExpense }: 
         <input value={expenseName} onChange={(event) => setExpenseName(event.target.value)} placeholder="Expense name" className="rounded border border-slate-300 px-2 py-1.5 text-sm dark:border-slate-600 dark:bg-slate-900" />
         <input type="number" min={0} value={amount} onChange={(event) => setAmount(Number(event.target.value))} placeholder="Amount" className="rounded border border-slate-300 px-2 py-1.5 text-sm dark:border-slate-600 dark:bg-slate-900" />
         <input value={category} onChange={(event) => setCategory(event.target.value)} placeholder="Category" className="rounded border border-slate-300 px-2 py-1.5 text-sm dark:border-slate-600 dark:bg-slate-900" />
-        <button type="submit" className="rounded px-2 py-1.5 text-sm font-semibold text-white" style={{ backgroundColor: 'var(--primary-color)' }}>
+        <button type="submit" className="rounded px-2 py-1.5 text-sm font-semibold text-white" style={{ backgroundColor: 'var(--secondary-color)' }}>
           Add Expense
         </button>
       </form>

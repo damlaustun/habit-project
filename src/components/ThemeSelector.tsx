@@ -10,7 +10,6 @@ const dummyColors: ThemeColors = {
   primaryColor: '#0f766e',
   secondaryColor: '#0ea5a3',
   backgroundColor: '#f6f7f9',
-  panelColor: '#ffffff',
   cardColor: '#ffffff'
 };
 const dummyFont: FontFamilyOption = 'system';

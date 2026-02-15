@@ -35,7 +35,7 @@ const MediaCollection = ({ items, onAddItem, onToggleItem, onDeleteItem }: Media
         <input value={title} onChange={(event) => setTitle(event.target.value)} placeholder="Title" className="rounded border border-slate-300 px-2 py-1.5 text-sm dark:border-slate-600 dark:bg-slate-900" />
         <input value={genre} onChange={(event) => setGenre(event.target.value)} placeholder="Genre" className="rounded border border-slate-300 px-2 py-1.5 text-sm dark:border-slate-600 dark:bg-slate-900" />
         <input value={notes} onChange={(event) => setNotes(event.target.value)} placeholder="Notes" className="rounded border border-slate-300 px-2 py-1.5 text-sm dark:border-slate-600 dark:bg-slate-900" />
-        <button type="submit" className="rounded px-2 py-1.5 text-sm font-semibold text-white" style={{ backgroundColor: 'var(--primary-color)' }}>
+        <button type="submit" className="rounded px-2 py-1.5 text-sm font-semibold text-white" style={{ backgroundColor: 'var(--secondary-color)' }}>
           Add
         </button>
       </form>

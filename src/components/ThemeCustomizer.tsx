@@ -43,9 +43,9 @@ const ThemeCustomizer = ({
         </div>
       </div>
 
-      <div className="grid gap-3 sm:grid-cols-5">
+      <div className="grid gap-3 sm:grid-cols-4">
         <label className="rounded-lg border border-slate-200 p-2 text-xs dark:border-slate-700">
-          Primary
+          Primary 1 (Main Panels)
           <input
             type="color"
             value={colors.primaryColor}
@@ -55,7 +55,7 @@ const ThemeCustomizer = ({
         </label>
 
         <label className="rounded-lg border border-slate-200 p-2 text-xs dark:border-slate-700">
-          Secondary
+          Secondary (Buttons)
           <input
             type="color"
             value={colors.secondaryColor}
@@ -75,17 +75,7 @@ const ThemeCustomizer = ({
         </label>
 
         <label className="rounded-lg border border-slate-200 p-2 text-xs dark:border-slate-700">
-          Panel
-          <input
-            type="color"
-            value={colors.panelColor}
-            onChange={(event) => onColorChange('panelColor', event.target.value)}
-            className="mt-1 block h-8 w-full"
-          />
-        </label>
-
-        <label className="rounded-lg border border-slate-200 p-2 text-xs dark:border-slate-700">
-          Card / Box
+          Primary 2 (Inner Panels)
           <input
             type="color"
             value={colors.cardColor}
