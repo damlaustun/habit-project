@@ -170,6 +170,7 @@ const App = () => {
     root.style.setProperty('--primary-color', themeSettings.colors.primaryColor);
     root.style.setProperty('--secondary-color', themeSettings.colors.secondaryColor);
     root.style.setProperty('--app-background', themeSettings.colors.backgroundColor);
+    root.style.setProperty('--panel-color', themeSettings.colors.panelColor);
     root.style.setProperty('--card-color', themeSettings.colors.cardColor);
     root.style.setProperty('--app-font-family', getFontStack(themeSettings.fontFamily));
 

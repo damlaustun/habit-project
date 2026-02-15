@@ -212,6 +212,7 @@ const defaultThemeSettings: ThemeSettingsSlice = {
     primaryColor: '#0f766e',
     secondaryColor: '#0ea5a3',
     backgroundColor: '#f6f7f9',
+    panelColor: '#ffffff',
     cardColor: '#ffffff'
   },
   fontFamily: 'system'
@@ -635,6 +636,7 @@ const fromCloudState = (payload: Partial<CloudAppState>): CloudAppState => {
         accentColor?: string;
         secondaryColor?: string;
         backgroundColor?: string;
+        panelColor?: string;
         cardColor?: string;
       };
     };
@@ -662,6 +664,11 @@ const fromCloudState = (payload: Partial<CloudAppState>): CloudAppState => {
         legacyThemePayload.themeColors?.backgroundColor ??
         legacyThemePayload.settings?.colorSettings?.backgroundColor ??
         defaults.themeSettings.colors.backgroundColor,
+      panelColor:
+        incomingTheme?.colors?.panelColor ??
+        legacyThemePayload.themeColors?.panelColor ??
+        legacyThemePayload.settings?.colorSettings?.panelColor ??
+        defaults.themeSettings.colors.panelColor,
       cardColor:
         incomingTheme?.colors?.cardColor ??
         legacyThemePayload.themeColors?.cardColor ??

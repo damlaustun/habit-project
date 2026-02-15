@@ -43,7 +43,7 @@ const ThemeCustomizer = ({
         </div>
       </div>
 
-      <div className="grid gap-3 sm:grid-cols-4">
+      <div className="grid gap-3 sm:grid-cols-5">
         <label className="rounded-lg border border-slate-200 p-2 text-xs dark:border-slate-700">
           Primary
           <input
@@ -70,6 +70,16 @@ const ThemeCustomizer = ({
             type="color"
             value={colors.backgroundColor}
             onChange={(event) => onColorChange('backgroundColor', event.target.value)}
+            className="mt-1 block h-8 w-full"
+          />
+        </label>
+
+        <label className="rounded-lg border border-slate-200 p-2 text-xs dark:border-slate-700">
+          Panel
+          <input
+            type="color"
+            value={colors.panelColor}
+            onChange={(event) => onColorChange('panelColor', event.target.value)}
             className="mt-1 block h-8 w-full"
           />
         </label>

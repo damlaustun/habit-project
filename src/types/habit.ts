@@ -187,6 +187,7 @@ export type ThemeColors = {
   primaryColor: string;
   secondaryColor: string;
   backgroundColor: string;
+  panelColor: string;
   cardColor: string;
 };
 

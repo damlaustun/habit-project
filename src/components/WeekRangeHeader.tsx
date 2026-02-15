@@ -16,7 +16,7 @@ const WeekRangeHeader = ({
   onWeekPick
 }: WeekRangeHeaderProps) => {
   return (
-    <section className="rounded-xl border border-slate-200 bg-white px-4 py-3 dark:border-slate-700 dark:bg-surface-darkCard">
+    <section className="rounded-xl border border-slate-200 bg-[var(--panel-color)] px-4 py-3 dark:border-slate-700">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="flex items-center gap-2">
           <button
