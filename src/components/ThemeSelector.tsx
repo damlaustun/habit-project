@@ -7,10 +7,10 @@ type ThemeSelectorProps = {
 };
 
 const dummyColors: ThemeColors = {
-  primaryColor: '#0f766e',
-  secondaryColor: '#0ea5a3',
-  backgroundColor: '#f6f7f9',
-  cardColor: '#ffffff'
+  primaryColor: '#ffffff',
+  secondaryColor: '#7e73aa',
+  backgroundColor: '#f7f4fb',
+  cardColor: '#efeaf8'
 };
 const dummyFont: FontFamilyOption = 'system';
 

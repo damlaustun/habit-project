@@ -219,12 +219,13 @@ const clampNumber = (value: number): number => {
 };
 
 const defaultThemeSettings: ThemeSettingsSlice = {
-  mode: 'system',
+  mode: 'light',
   colors: {
-    primaryColor: '#0f766e',
-    secondaryColor: '#0ea5a3',
-    backgroundColor: '#f6f7f9',
-    cardColor: '#ffffff'
+    // Pastel minimal default theme
+    primaryColor: '#ffffff',
+    secondaryColor: '#7e73aa',
+    backgroundColor: '#f7f4fb',
+    cardColor: '#efeaf8'
   },
   fontFamily: 'system'
 };
