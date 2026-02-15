@@ -663,7 +663,7 @@ const App = () => {
           ) : null}
 
           {displayPath === '/books' ? (
-            <ModuleLayoutWrapper title="Books - Book Journal" subtitle="Reading plans and progress">
+            <ModuleLayoutWrapper title="Book Journal" subtitle="Reading plans and progress">
               <BooksPage
                 books={books.entries}
                 onAddBook={addBook}
@@ -699,7 +699,7 @@ const App = () => {
           ) : null}
 
           {displayPath === '/sports' ? (
-            <ModuleLayoutWrapper title="Sports - Workout Planner" subtitle="Plan workout programs by day and track completion">
+            <ModuleLayoutWrapper title="Workout Planner" subtitle="Plan workout programs by day and track completion">
               <WorkoutPlanner
                 programs={sports.programs}
                 onAddProgram={addWorkoutProgram}
@@ -728,7 +728,7 @@ const App = () => {
           ) : null}
 
           {displayPath === '/budget' ? (
-            <ModuleLayoutWrapper title="Budget - Budget Planner" subtitle="Track income, expenses, and remaining balance">
+            <ModuleLayoutWrapper title="Budget Planner" subtitle="Track income, expenses, and remaining balance">
               {currentBudgetMonth ? (
                 <BudgetDashboard
                   month={currentBudgetMonth}

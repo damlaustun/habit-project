@@ -5,10 +5,10 @@ type SidebarNavigationProps = {
 
 const items: Array<{ path: string; label: string }> = [
   { path: '/', label: 'Dashboard' },
-  { path: '/books', label: 'Books - Book Journal' },
-  { path: '/sports', label: 'Sports - Workout Planner' },
+  { path: '/books', label: 'Book Journal' },
+  { path: '/sports', label: 'Workout Planner' },
   { path: '/shopping', label: 'Shopping Lists' },
-  { path: '/budget', label: 'Budget - Budget Planner' },
+  { path: '/budget', label: 'Budget Planner' },
   { path: '/media', label: 'Watch-Read Later' },
   { path: '/notes', label: 'Notes' }
 ];
