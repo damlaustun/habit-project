@@ -16,6 +16,7 @@ type SettingsPanelProps = {
   onDailyGoalChange: (value: number) => void;
   onWeeklyGoalChange: (value: number) => void;
   onLockPastWeeksChange: (value: boolean) => void;
+  onResetApp: () => void;
 };
 
 const SettingsPanel = ({
@@ -32,7 +33,8 @@ const SettingsPanel = ({
   onFontFamilyChange,
   onDailyGoalChange,
   onWeeklyGoalChange,
-  onLockPastWeeksChange
+  onLockPastWeeksChange,
+  onResetApp
 }: SettingsPanelProps) => {
   if (!open) {
     return null;
@@ -103,6 +105,24 @@ const SettingsPanel = ({
                 onChange={(event) => onLockPastWeeksChange(event.target.checked)}
               />
             </label>
+          </section>
+
+          <section className="rounded-lg border border-rose-200 bg-rose-50/70 p-3 dark:border-rose-900/60 dark:bg-rose-950/20">
+            <div className="flex items-center justify-between gap-3">
+              <div>
+                <p className="text-sm font-semibold text-rose-700 dark:text-rose-300">Reset App</p>
+                <p className="text-xs text-rose-600/90 dark:text-rose-300/80">
+                  Clears your planner, habits, books, sports, shopping, budget and watch list data.
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={onResetApp}
+                className="rounded-md border border-rose-300 px-3 py-1.5 text-xs font-semibold text-rose-700 hover:bg-rose-100 dark:border-rose-800 dark:text-rose-300 dark:hover:bg-rose-900/40"
+              >
+                Reset App
+              </button>
+            </div>
           </section>
         </div>
       </div>

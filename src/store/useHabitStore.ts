@@ -150,6 +150,7 @@ type HabitStore = CloudAppState & {
   setDailyGoal: (value: number) => void;
   setWeeklyGoal: (value: number) => void;
   setLockPastWeeks: (enabled: boolean) => void;
+  resetAppData: () => void;
 
   addBook: (input: {
     title: string;
@@ -1347,6 +1348,16 @@ export const useHabitStore = create<HabitStore>()(
             lockPastWeeks: enabled
           }
         })),
+      resetAppData: () =>
+        set((state) => {
+          const defaults = createDefaultCloudState();
+          return {
+            ...defaults,
+            userAuth: state.userAuth,
+            cloudRowId: state.cloudRowId,
+            userProfile: state.userProfile
+          };
+        }),
       addBook: (input) =>
         set((state) => ({
           books: {

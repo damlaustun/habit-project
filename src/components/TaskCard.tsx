@@ -138,7 +138,7 @@ const TaskCard = ({
                 checked={priority === 'important'}
                 onChange={() => setPriority('important')}
               />
-              !
+              Important (!)
             </label>
             <label className="flex items-center gap-1">
               <input
@@ -216,24 +216,29 @@ const TaskCard = ({
             >
               Drag
             </button>
-            <div className="flex gap-2">
-              <button
-                type="button"
-                onClick={() => setEditing(true)}
-                disabled={readOnly}
-                className="text-xs font-medium text-slate-600 hover:text-slate-900 disabled:opacity-50 dark:text-slate-300 dark:hover:text-slate-50"
-              >
+            <details className="relative">
+              <summary className="cursor-pointer list-none rounded border border-slate-300 px-2 py-1 text-xs font-medium text-slate-600 hover:text-slate-900 dark:border-slate-600 dark:text-slate-300 dark:hover:text-slate-50">
                 Edit
-              </button>
-              <button
-                type="button"
-                onClick={() => onDelete(day, task.id)}
-                disabled={readOnly}
-                className="text-xs font-medium text-rose-600 hover:text-rose-700 disabled:opacity-50"
-              >
-                Delete
-              </button>
-            </div>
+              </summary>
+              <div className="absolute right-0 z-20 mt-1 w-36 rounded border border-slate-200 bg-[var(--card-color)] p-1 shadow-lg dark:border-slate-700">
+                <button
+                  type="button"
+                  onClick={() => setEditing(true)}
+                  disabled={readOnly}
+                  className="block w-full rounded px-2 py-1 text-left text-xs hover:bg-slate-100 disabled:opacity-50 dark:hover:bg-slate-800"
+                >
+                  Edit task
+                </button>
+                <button
+                  type="button"
+                  onClick={() => onDelete(day, task.id)}
+                  disabled={readOnly}
+                  className="block w-full rounded px-2 py-1 text-left text-xs hover:bg-slate-100 disabled:opacity-50 dark:hover:bg-slate-800"
+                >
+                  Delete task
+                </button>
+              </div>
+            </details>
           </div>
         </>
       )}

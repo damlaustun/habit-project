@@ -87,6 +87,7 @@ const App = () => {
     setDailyGoal,
     setWeeklyGoal,
     setLockPastWeeks,
+    resetAppData,
 
     addBook,
     updateBook,
@@ -161,6 +162,66 @@ const App = () => {
 
   const goNextWeekSafe = () => {
     setCurrentWeek(addWeeksToId(weeklyPlanner.currentWeekId, 1));
+  };
+
+  const confirmDelete = (targetLabel: string): boolean =>
+    window.confirm(`${targetLabel} silmek istedigine emin misin?`);
+
+  const handleDeleteHabit = (day: import('./types/habit').DayId, habitId: string) => {
+    if (!confirmDelete('Bu habiti')) return;
+    deleteHabit(day, habitId);
+  };
+
+  const handleDeletePlannerItem = (day: import('./types/habit').DayId, itemId: string) => {
+    if (!confirmDelete('Bu planner maddesini')) return;
+    deletePlannerItem(day, itemId);
+  };
+
+  const handleDeleteBook = (bookId: string, navigateAfter = false) => {
+    if (!confirmDelete('Bu kitabi')) return;
+    deleteBook(bookId);
+    if (navigateAfter) {
+      navigate('/books');
+    }
+  };
+
+  const handleDeleteWorkoutProgram = (programId: string) => {
+    if (!confirmDelete('Bu workout programini')) return;
+    deleteWorkoutProgram(programId);
+  };
+
+  const handleDeleteWorkoutItem = (programId: string, day: import('./types/habit').DayId, itemId: string) => {
+    if (!confirmDelete('Bu egzersizi')) return;
+    deleteWorkoutItem(programId, day, itemId);
+  };
+
+  const handleClearWorkoutDay = (programId: string, day: import('./types/habit').DayId) => {
+    if (!window.confirm('Bu gunun tum egzersizlerini temizlemek istedigine emin misin?')) return;
+    clearWorkoutDay(programId, day);
+  };
+
+  const handleDeleteShoppingList = (listId: string) => {
+    if (!confirmDelete('Bu listeyi')) return;
+    deleteShoppingList(listId);
+  };
+
+  const handleDeleteExpense = (monthKey: string, expenseId: string) => {
+    if (!confirmDelete('Bu gideri')) return;
+    deleteExpense(monthKey, expenseId);
+  };
+
+  const handleDeleteMediaItem = (itemId: string) => {
+    if (!confirmDelete('Bu kaydi')) return;
+    deleteMediaItem(itemId);
+  };
+
+  const handleResetApp = () => {
+    const approved = window.confirm(
+      'Tum uygulama verileri sifirlansin mi? Bu islem geri alinamaz.'
+    );
+    if (!approved) return;
+    resetAppData();
+    setSettingsOpen(false);
   };
 
   useEffect(() => {
@@ -487,12 +548,12 @@ const App = () => {
                   readOnly={readOnly}
                   onAddHabitClick={setActiveDayForModal}
                   onToggleHabit={toggleHabit}
-                  onDeleteHabit={deleteHabit}
+                  onDeleteHabit={handleDeleteHabit}
                   onUpdateHabit={updateHabit}
                   onUpdateHabitDuration={updateHabitDuration}
                   onAddPlannerItem={addPlannerItem}
                   onTogglePlannerItem={togglePlannerItem}
-                  onDeletePlannerItem={deletePlannerItem}
+                  onDeletePlannerItem={handleDeletePlannerItem}
                 />
               </div>
             </ModuleLayoutWrapper>
@@ -504,7 +565,7 @@ const App = () => {
                 books={books.entries}
                 onAddBook={addBook}
                 onUpdateBook={updateBook}
-                onDeleteBook={deleteBook}
+                onDeleteBook={(bookId) => handleDeleteBook(bookId)}
                 onOpenBook={(bookId) => navigate(`/books/${encodeURIComponent(bookId)}`)}
               />
             </ModuleLayoutWrapper>
@@ -516,7 +577,7 @@ const App = () => {
                 book={selectedBook}
                 onBack={() => navigate('/books')}
                 onUpdateBook={updateBook}
-                onDeleteBook={deleteBook}
+                onDeleteBook={(bookId) => handleDeleteBook(bookId, true)}
                 onLogPages={logBookPages}
                 onUpdateNotes={updateBookNotes}
                 onAddQuote={addBookQuote}
@@ -540,12 +601,12 @@ const App = () => {
                 programs={sports.programs}
                 onAddProgram={addWorkoutProgram}
                 onUpdateProgram={updateWorkoutProgram}
-                onDeleteProgram={deleteWorkoutProgram}
+                onDeleteProgram={handleDeleteWorkoutProgram}
                 onAddWorkoutItem={addWorkoutItem}
                 onToggleWorkoutItem={toggleWorkoutItem}
                 onUpdateWorkoutItem={updateWorkoutItem}
-                onDeleteWorkoutItem={deleteWorkoutItem}
-                onClearWorkoutDay={clearWorkoutDay}
+                onDeleteWorkoutItem={handleDeleteWorkoutItem}
+                onClearWorkoutDay={handleClearWorkoutDay}
               />
             </ModuleLayoutWrapper>
           ) : null}
@@ -556,7 +617,7 @@ const App = () => {
                 lists={shoppingLists.lists}
                 onAddList={addShoppingList}
                 onRenameList={renameShoppingList}
-                onDeleteList={deleteShoppingList}
+                onDeleteList={handleDeleteShoppingList}
                 onAddItem={addShoppingItem}
                 onToggleItem={toggleShoppingItem}
               />
@@ -570,7 +631,7 @@ const App = () => {
                   month={currentBudgetMonth}
                   onSetIncome={setMonthlyIncome}
                   onAddExpense={addExpense}
-                  onDeleteExpense={deleteExpense}
+                  onDeleteExpense={handleDeleteExpense}
                 />
               ) : null}
             </ModuleLayoutWrapper>
@@ -582,7 +643,7 @@ const App = () => {
                 items={mediaList.items}
                 onAddItem={addMediaItem}
                 onToggleItem={toggleMediaItem}
-                onDeleteItem={deleteMediaItem}
+                onDeleteItem={handleDeleteMediaItem}
               />
             </ModuleLayoutWrapper>
           ) : null}
@@ -611,6 +672,7 @@ const App = () => {
         onDailyGoalChange={setDailyGoal}
         onWeeklyGoalChange={setWeeklyGoal}
         onLockPastWeeksChange={setLockPastWeeks}
+        onResetApp={handleResetApp}
       />
 
       <UserProfilePanel

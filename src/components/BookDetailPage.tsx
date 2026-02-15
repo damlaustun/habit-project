@@ -83,10 +83,7 @@ const BookDetailPage = ({
               </button>
               <button
                 type="button"
-                onClick={() => {
-                  onDeleteBook(book.id);
-                  onBack();
-                }}
+                onClick={() => onDeleteBook(book.id)}
                 className="block w-full rounded px-2 py-1 text-left text-xs hover:bg-slate-100 dark:hover:bg-slate-800"
               >
                 Delete book
