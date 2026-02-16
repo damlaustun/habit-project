@@ -148,6 +148,7 @@ export type WishItem = {
   id: string;
   name: string;
   price?: number;
+  quantity: number;
   purchased: boolean;
 };
 
@@ -204,10 +205,12 @@ export type ThemeColors = {
   primaryColor: string;
   secondaryColor: string;
   backgroundColor: string;
+  panelColor: string;
   cardColor: string;
 };
 
 export type FontFamilyOption = 'system' | 'inter' | 'poppins' | 'roboto' | 'manrope' | 'nunito' | 'lora';
+export type LanguageOption = 'en' | 'tr' | 'es' | 'fr';
 
 export type UserProfile = {
   name: string;

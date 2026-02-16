@@ -1,11 +1,14 @@
 import clsx from 'clsx';
-import type { FontFamilyOption, ThemeColors, ThemeMode } from '../types/habit';
+import type { FontFamilyOption, LanguageOption, ThemeColors, ThemeMode } from '../types/habit';
+import { useI18n } from '../i18n/useI18n';
 
 type ThemeCustomizerProps = {
   mode: ThemeMode;
+  language: LanguageOption;
   colors: ThemeColors;
   fontFamily: FontFamilyOption;
   onModeChange: (mode: ThemeMode) => void;
+  onLanguageChange: (value: LanguageOption) => void;
   onColorChange: <K extends keyof ThemeColors>(key: K, value: ThemeColors[K]) => void;
   onFontFamilyChange: (value: FontFamilyOption) => void;
 };
@@ -14,16 +17,20 @@ const modes: ThemeMode[] = ['light', 'dark', 'system'];
 
 const ThemeCustomizer = ({
   mode,
+  language,
   colors,
   fontFamily,
   onModeChange,
+  onLanguageChange,
   onColorChange,
   onFontFamilyChange
 }: ThemeCustomizerProps) => {
+  const { t } = useI18n();
+
   return (
     <div className="space-y-4">
       <div>
-        <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-slate-500">Mode</p>
+        <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-slate-500">{t('mode')}</p>
         <div className="flex gap-2">
           {modes.map((item) => (
             <button
@@ -43,9 +50,9 @@ const ThemeCustomizer = ({
         </div>
       </div>
 
-      <div className="grid gap-3 sm:grid-cols-4">
+      <div className="grid gap-3 sm:grid-cols-5">
         <label className="rounded-lg border border-slate-200 p-2 text-xs dark:border-slate-700">
-          Primary 1 (Main Panels)
+          {t('primaryAccent')}
           <input
             type="color"
             value={colors.primaryColor}
@@ -55,7 +62,7 @@ const ThemeCustomizer = ({
         </label>
 
         <label className="rounded-lg border border-slate-200 p-2 text-xs dark:border-slate-700">
-          Secondary (Buttons)
+          {t('secondaryButtons')}
           <input
             type="color"
             value={colors.secondaryColor}
@@ -65,7 +72,7 @@ const ThemeCustomizer = ({
         </label>
 
         <label className="rounded-lg border border-slate-200 p-2 text-xs dark:border-slate-700">
-          Background
+          {t('background')}
           <input
             type="color"
             value={colors.backgroundColor}
@@ -75,7 +82,17 @@ const ThemeCustomizer = ({
         </label>
 
         <label className="rounded-lg border border-slate-200 p-2 text-xs dark:border-slate-700">
-          Primary 2 (Inner Panels)
+          {t('panelColor')}
+          <input
+            type="color"
+            value={colors.panelColor}
+            onChange={(event) => onColorChange('panelColor', event.target.value)}
+            className="mt-1 block h-8 w-full"
+          />
+        </label>
+
+        <label className="rounded-lg border border-slate-200 p-2 text-xs dark:border-slate-700">
+          {t('innerPanels')}
           <input
             type="color"
             value={colors.cardColor}
@@ -86,7 +103,7 @@ const ThemeCustomizer = ({
       </div>
 
       <div>
-        <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-slate-500">Font</p>
+        <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-slate-500">{t('font')}</p>
         <select
           value={fontFamily}
           onChange={(event) => onFontFamilyChange(event.target.value as FontFamilyOption)}
@@ -99,6 +116,20 @@ const ThemeCustomizer = ({
           <option value="manrope">Manrope</option>
           <option value="nunito">Nunito</option>
           <option value="lora">Lora</option>
+        </select>
+      </div>
+
+      <div>
+        <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-slate-500">{t('language')}</p>
+        <select
+          value={language}
+          onChange={(event) => onLanguageChange(event.target.value as LanguageOption)}
+          className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm dark:border-slate-600 dark:bg-slate-900 dark:text-slate-200"
+        >
+          <option value="en">{t('english')}</option>
+          <option value="tr">{t('turkish')}</option>
+          <option value="es">{t('spanish')}</option>
+          <option value="fr">{t('french')}</option>
         </select>
       </div>
     </div>

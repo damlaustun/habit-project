@@ -18,6 +18,7 @@ import WeekRangeHeader from './components/WeekRangeHeader';
 import WeeklyBoard from './components/WeeklyBoard';
 import WishListManager from './components/WishListManager';
 import WorkoutPlanner from './components/WorkoutPlanner';
+import { translate } from './i18n/translations';
 import { isSupabaseConfigured, supabase } from './lib/supabase';
 import { getCloudStateWeekLabel, useHabitStore } from './store/useHabitStore';
 import { DAY_ORDER, type DayId, type FontFamilyOption, type UserProfile } from './types/habit';
@@ -26,8 +27,7 @@ import {
   getCompletedPointsForDay,
   getTaskCounts,
   getTotalCompletedPoints,
-  getWeekCompletionStats,
-  isWeekFullyCompleted
+  getWeekLevelDetails
 } from './utils/stats';
 
 const getFontStack = (font: FontFamilyOption): string => {
@@ -130,6 +130,7 @@ const App = () => {
     setThemeMode,
     setThemeColor,
     setFontFamily,
+    setLanguage,
     setDailyGoal,
     setLockPastWeeks,
     resetAppData,
@@ -174,13 +175,20 @@ const App = () => {
   } = useHabitStore();
 
   const currentWeek = useMemo(() => getCurrentWeek(), [getCurrentWeek, weeklyPlanner]);
+  const t = (key: Parameters<typeof translate>[1], params?: Record<string, string | number>) =>
+    translate(themeSettings.language, key, params);
   const totalPoints = useMemo(() => getTotalCompletedPoints(currentWeek), [currentWeek]);
   const taskCounts = useMemo(() => getTaskCounts(currentWeek), [currentWeek]);
   const dailyPoints = useMemo(() => getCompletedPointsForDay(currentWeek, getTodayDayId()), [currentWeek]);
-  const weekCompletion = useMemo(() => getWeekCompletionStats(currentWeek), [currentWeek]);
+  const weekLevelDetails = useMemo(
+    () => getWeekLevelDetails(currentWeek, habits.dailyGoal),
+    [currentWeek, habits.dailyGoal]
+  );
   const userLevel = useMemo(
-    () => 1 + Object.values(weeklyPlanner.weeks).filter((week) => isWeekFullyCompleted(week)).length,
-    [weeklyPlanner.weeks]
+    () =>
+      1 +
+      Object.values(weeklyPlanner.weeks).filter((week) => getWeekLevelDetails(week, habits.dailyGoal).achieved).length,
+    [weeklyPlanner.weeks, habits.dailyGoal]
   );
   const sportsProgramsForSelectedWeek = useMemo(() => {
     const weekId = weeklyPlanner.currentWeekId;
@@ -404,12 +412,12 @@ const App = () => {
     root.style.setProperty('--primary-color', themeSettings.colors.primaryColor);
     root.style.setProperty('--secondary-color', themeSettings.colors.secondaryColor);
     root.style.setProperty('--app-background', themeSettings.colors.backgroundColor);
-    root.style.setProperty('--panel-color', themeSettings.colors.primaryColor);
+    root.style.setProperty('--panel-color', themeSettings.colors.panelColor);
     root.style.setProperty('--card-color', themeSettings.colors.cardColor);
     root.style.setProperty('--on-primary-color', getReadableTextColor(themeSettings.colors.primaryColor));
     root.style.setProperty('--on-secondary-color', getReadableTextColor(themeSettings.colors.secondaryColor));
     root.style.setProperty('--on-background-color', getReadableTextColor(themeSettings.colors.backgroundColor));
-    root.style.setProperty('--on-panel-color', getReadableTextColor(themeSettings.colors.primaryColor));
+    root.style.setProperty('--on-panel-color', getReadableTextColor(themeSettings.colors.panelColor));
     root.style.setProperty('--on-card-color', getReadableTextColor(themeSettings.colors.cardColor));
     root.style.setProperty('--app-font-family', getFontStack(themeSettings.fontFamily));
 
@@ -670,7 +678,14 @@ const App = () => {
             dailyPoints={dailyPoints}
             dailyGoal={habits.dailyGoal}
             level={userLevel}
-            levelProgress={weekCompletion}
+            levelProgress={{ value: weekLevelDetails.combinedPercent, goal: 100 }}
+            levelDetails={{
+              taskCompleted: weekLevelDetails.taskCompleted,
+              taskTotal: weekLevelDetails.taskTotal,
+              points: weekLevelDetails.points,
+              pointGoal: weekLevelDetails.pointGoal,
+              combinedPercent: weekLevelDetails.combinedPercent
+            }}
             weekLabel={weeklyPlanner.currentWeekLabel}
             readOnly={readOnly}
             userName={userProfile.name}
@@ -682,7 +697,7 @@ const App = () => {
 
           {displayPath === '/' ? (
             <ModuleLayoutWrapper
-              title="Dashboard"
+              title={t('dashboard')}
               subtitle="Daily habits and weekly agenda, organized day by day"
               actions={<span className="text-xs text-slate-500">Sync: {syncStatus}</span>}
             >
@@ -729,7 +744,7 @@ const App = () => {
           ) : null}
 
           {displayPath === '/books' ? (
-            <ModuleLayoutWrapper title="Book Journal" subtitle="Reading plans and progress">
+            <ModuleLayoutWrapper title={t('bookJournal')} subtitle="Reading plans and progress">
               <BooksPage
                 books={books.entries}
                 onAddBook={addBook}
@@ -765,7 +780,7 @@ const App = () => {
           ) : null}
 
           {displayPath === '/sports' ? (
-            <ModuleLayoutWrapper title="Workout Planner" subtitle="Plan workout programs by day and track completion">
+            <ModuleLayoutWrapper title={t('workoutPlanner')} subtitle="Plan workout programs by day and track completion">
               <div className="space-y-3">
                 <WeekRangeHeader
                   weekId={weeklyPlanner.currentWeekId}
@@ -791,7 +806,7 @@ const App = () => {
           ) : null}
 
           {displayPath === '/shopping' ? (
-            <ModuleLayoutWrapper title="Shopping Lists" subtitle="Groceries and purchase tracking">
+            <ModuleLayoutWrapper title={t('shoppingLists')} subtitle="Groceries and purchase tracking">
               <WishListManager
                 lists={shoppingLists.lists}
                 onAddList={addShoppingList}
@@ -804,7 +819,7 @@ const App = () => {
           ) : null}
 
           {displayPath === '/budget' ? (
-            <ModuleLayoutWrapper title="Budget Planner" subtitle="Track income, expenses, and remaining balance">
+            <ModuleLayoutWrapper title={t('budgetPlanner')} subtitle="Track income, expenses, and remaining balance">
               {currentBudgetMonth ? (
                 <BudgetDashboard
                   month={currentBudgetMonth}
@@ -818,7 +833,7 @@ const App = () => {
           ) : null}
 
           {displayPath === '/media' ? (
-            <ModuleLayoutWrapper title="Watch-Read Later" subtitle="Movies, TV shows, and books to consume later">
+            <ModuleLayoutWrapper title={t('watchReadLater')} subtitle="Movies, TV shows, and books to consume later">
               <MediaCollection
                 items={mediaList.items}
                 onAddItem={addMediaItem}
@@ -829,7 +844,7 @@ const App = () => {
           ) : null}
 
           {displayPath === '/notes' ? (
-            <ModuleLayoutWrapper title="Notes" subtitle="Keep quick notes in one place">
+            <ModuleLayoutWrapper title={t('notes')} subtitle="Keep quick notes in one place">
               <NotesBoard
                 folders={notes.folders}
                 onAddFolder={addNoteFolder}
@@ -856,12 +871,14 @@ const App = () => {
         themeMode={themeSettings.mode}
         themeColors={themeSettings.colors}
         fontFamily={themeSettings.fontFamily}
+        language={themeSettings.language}
         dailyGoal={habits.dailyGoal}
         lockPastWeeks={habits.lockPastWeeks}
         onClose={() => setSettingsOpen(false)}
         onThemeModeChange={setThemeMode}
         onThemeColorChange={setThemeColor}
         onFontFamilyChange={setFontFamily}
+        onLanguageChange={setLanguage}
         onDailyGoalChange={setDailyGoal}
         onLockPastWeeksChange={setLockPastWeeks}
         onResetApp={handleResetApp}

@@ -94,6 +94,29 @@ export const getWeekCompletionStats = (plan: WeeklyPlan) => {
   return { completed, total, percent };
 };
 
+export const getWeeklyPointGoal = (dailyGoal: number): number => Math.max(0, dailyGoal) * 7;
+
+export const getWeekLevelDetails = (plan: WeeklyPlan, dailyGoal: number) => {
+  const taskStats = getWeekCompletionStats(plan);
+  const points = getTotalCompletedPoints(plan);
+  const pointGoal = getWeeklyPointGoal(dailyGoal);
+  const taskPercent = taskStats.percent;
+  const pointPercent = pointGoal <= 0 ? 0 : Math.min(100, Math.round((points / pointGoal) * 100));
+  const combinedPercent = Math.round((taskPercent + pointPercent) / 2);
+  const achieved = taskStats.total > 0 && taskStats.completed === taskStats.total && points >= pointGoal;
+
+  return {
+    taskCompleted: taskStats.completed,
+    taskTotal: taskStats.total,
+    points,
+    pointGoal,
+    taskPercent,
+    pointPercent,
+    combinedPercent,
+    achieved
+  };
+};
+
 export const isWeekFullyCompleted = (plan: WeeklyPlan): boolean => {
   const stats = getWeekCompletionStats(plan);
   const total = stats.total;

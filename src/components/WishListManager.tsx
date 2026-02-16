@@ -1,12 +1,13 @@
 import { useState } from 'react';
 import type { WishList } from '../types/habit';
+import { useI18n } from '../i18n/useI18n';
 
 type WishListManagerProps = {
   lists: WishList[];
   onAddList: (name: string) => void;
   onRenameList: (listId: string, name: string) => void;
   onDeleteList: (listId: string) => void;
-  onAddItem: (listId: string, name: string, price?: number) => void;
+  onAddItem: (listId: string, name: string, price?: number, quantity?: number) => void;
   onToggleItem: (listId: string, itemId: string) => void;
 };
 
@@ -18,12 +19,14 @@ const WishListManager = ({
   onAddItem,
   onToggleItem
 }: WishListManagerProps) => {
+  const { t } = useI18n();
   const [listName, setListName] = useState('');
   const [renameListId, setRenameListId] = useState<string | null>(null);
   const [renameValue, setRenameValue] = useState('');
   const [addItemListId, setAddItemListId] = useState<string | null>(null);
   const [itemName, setItemName] = useState('');
   const [itemPrice, setItemPrice] = useState<number>(0);
+  const [itemQuantity, setItemQuantity] = useState<number>(1);
 
   return (
     <div className="space-y-4">
@@ -39,7 +42,7 @@ const WishListManager = ({
         <input
           value={listName}
           onChange={(event) => setListName(event.target.value)}
-          placeholder="New shopping list"
+          placeholder={t('newShoppingList')}
           className="flex-1 rounded-md border border-slate-300 px-3 py-2 text-sm dark:border-slate-600 dark:bg-slate-900"
         />
         <button
@@ -47,7 +50,7 @@ const WishListManager = ({
           className="rounded-md px-3 py-2 text-sm font-semibold text-white"
           style={{ backgroundColor: 'var(--secondary-color)', color: 'var(--on-secondary-color)' }}
         >
-          Add List
+          {t('addList')}
         </button>
       </form>
 
@@ -56,9 +59,22 @@ const WishListManager = ({
           <article key={list.id} className="rounded-xl border border-slate-200 bg-[var(--card-color)] p-3 dark:border-slate-700">
             <div className="mb-2 flex items-center justify-between">
               <h3 className="font-semibold text-slate-800 dark:text-slate-100">{list.name}</h3>
-              <details className="relative">
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setAddItemListId(addItemListId === list.id ? null : list.id);
+                    setItemName('');
+                    setItemPrice(0);
+                    setItemQuantity(1);
+                  }}
+                  className="rounded border border-slate-300 px-2 py-1 text-xs dark:border-slate-600"
+                >
+                  {t('addItem')}
+                </button>
+                <details className="relative">
                 <summary className="cursor-pointer list-none rounded border border-slate-300 px-2 py-1 text-xs dark:border-slate-600">
-                  Edit
+                  {t('edit')}
                 </summary>
                 <div className="absolute right-0 z-20 mt-1 w-36 rounded border border-slate-200 bg-[var(--card-color)] p-1 shadow-lg dark:border-slate-700">
                   <button
@@ -69,28 +85,18 @@ const WishListManager = ({
                     }}
                     className="block w-full rounded px-2 py-1 text-left text-xs hover:bg-slate-100 dark:hover:bg-slate-800"
                   >
-                    Rename list
+                    {t('renameList')}
                   </button>
                   <button
                     type="button"
                     onClick={() => onDeleteList(list.id)}
                     className="block w-full rounded px-2 py-1 text-left text-xs hover:bg-slate-100 dark:hover:bg-slate-800"
                   >
-                    Delete list
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setAddItemListId(list.id);
-                      setItemName('');
-                      setItemPrice(0);
-                    }}
-                    className="block w-full rounded px-2 py-1 text-left text-xs hover:bg-slate-100 dark:hover:bg-slate-800"
-                  >
-                    Add item
+                    {t('deleteList')}
                   </button>
                 </div>
-              </details>
+                </details>
+              </div>
             </div>
 
             {renameListId === list.id ? (
@@ -105,7 +111,7 @@ const WishListManager = ({
                   onClick={() => setRenameListId(null)}
                   className="rounded border border-slate-300 px-2 py-1 text-xs dark:border-slate-600"
                 >
-                  Cancel
+                  {t('cancel')}
                 </button>
                 <button
                   type="button"
@@ -116,7 +122,7 @@ const WishListManager = ({
                   className="rounded px-2 py-1 text-xs font-semibold text-white"
                   style={{ backgroundColor: 'var(--secondary-color)', color: 'var(--on-secondary-color)' }}
                 >
-                  Save
+                  {t('save')}
                 </button>
               </div>
             ) : null}
@@ -126,7 +132,7 @@ const WishListManager = ({
                 <input
                   value={itemName}
                   onChange={(event) => setItemName(event.target.value)}
-                  placeholder="Item name"
+                  placeholder={t('itemName')}
                   className="rounded border border-slate-300 px-2 py-1 text-xs dark:border-slate-600 dark:bg-slate-900"
                 />
                 <input
@@ -134,7 +140,15 @@ const WishListManager = ({
                   min={0}
                   value={itemPrice}
                   onChange={(event) => setItemPrice(Number(event.target.value))}
-                  placeholder="Price (optional)"
+                  placeholder={t('priceOptional')}
+                  className="rounded border border-slate-300 px-2 py-1 text-xs dark:border-slate-600 dark:bg-slate-900"
+                />
+                <input
+                  type="number"
+                  min={1}
+                  value={itemQuantity}
+                  onChange={(event) => setItemQuantity(Number(event.target.value))}
+                  placeholder={t('quantity')}
                   className="rounded border border-slate-300 px-2 py-1 text-xs dark:border-slate-600 dark:bg-slate-900"
                 />
                 <div className="flex justify-end gap-1.5">
@@ -143,20 +157,20 @@ const WishListManager = ({
                     onClick={() => setAddItemListId(null)}
                     className="rounded border border-slate-300 px-2 py-1 text-xs dark:border-slate-600"
                   >
-                    Cancel
+                    {t('cancel')}
                   </button>
                   <button
                     type="button"
                     onClick={() => {
                       const normalized = itemName.trim();
                       if (!normalized) return;
-                      onAddItem(list.id, normalized, itemPrice > 0 ? itemPrice : undefined);
+                      onAddItem(list.id, normalized, itemPrice > 0 ? itemPrice : undefined, itemQuantity > 0 ? itemQuantity : 1);
                       setAddItemListId(null);
                     }}
                     className="rounded px-2 py-1 text-xs font-semibold text-white"
                     style={{ backgroundColor: 'var(--secondary-color)', color: 'var(--on-secondary-color)' }}
                   >
-                    Save
+                    {t('save')}
                   </button>
                 </div>
               </div>
@@ -172,11 +186,14 @@ const WishListManager = ({
                     <input type="checkbox" checked={item.purchased} onChange={() => onToggleItem(list.id, item.id)} />
                     <span className={item.purchased ? 'line-through opacity-60' : ''}>{item.name}</span>
                   </span>
-                  {item.price ? <span className="text-xs text-slate-500">${item.price}</span> : null}
+                  <span className="text-xs text-slate-500">
+                    x{item.quantity}
+                    {item.price ? ` · $${item.price}` : ''}
+                  </span>
                 </label>
               ))}
 
-              {list.items.length === 0 ? <p className="text-xs text-slate-500">No items.</p> : null}
+              {list.items.length === 0 ? <p className="text-xs text-slate-500">{t('noItems')}</p> : null}
             </div>
           </article>
         ))}

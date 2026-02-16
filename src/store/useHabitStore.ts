@@ -12,6 +12,7 @@ import type {
   HabitItem,
   HabitOverride,
   HabitPriority,
+  LanguageOption,
   MediaItem,
   MediaType,
   NoteFolder,
@@ -88,6 +89,7 @@ type ThemeSettingsSlice = {
   mode: ThemeMode;
   colors: ThemeColors;
   fontFamily: FontFamilyOption;
+  language: LanguageOption;
 };
 
 type CloudAppState = {
@@ -154,6 +156,7 @@ type HabitStore = CloudAppState & {
   setThemeMode: (mode: ThemeMode) => void;
   setThemeColor: <K extends keyof ThemeColors>(key: K, value: ThemeColors[K]) => void;
   setFontFamily: (value: FontFamilyOption) => void;
+  setLanguage: (value: LanguageOption) => void;
   setDailyGoal: (value: number) => void;
   setLockPastWeeks: (enabled: boolean) => void;
   resetAppData: () => void;
@@ -202,7 +205,7 @@ type HabitStore = CloudAppState & {
   addShoppingList: (name: string) => void;
   renameShoppingList: (listId: string, name: string) => void;
   deleteShoppingList: (listId: string) => void;
-  addShoppingItem: (listId: string, name: string, price?: number) => void;
+  addShoppingItem: (listId: string, name: string, price?: number, quantity?: number) => void;
   toggleShoppingItem: (listId: string, itemId: string) => void;
 
   setMonthlyIncome: (monthKey: string, income: number) => void;
@@ -237,12 +240,14 @@ const defaultThemeSettings: ThemeSettingsSlice = {
   mode: 'light',
   colors: {
     // Pastel minimal default theme
-    primaryColor: '#ffffff',
+    primaryColor: '#7e73aa',
     secondaryColor: '#7e73aa',
     backgroundColor: '#f7f4fb',
+    panelColor: '#ffffff',
     cardColor: '#efeaf8'
   },
-  fontFamily: 'system'
+  fontFamily: 'system',
+  language: 'en'
 };
 
 const defaultUserProfile: UserProfile = {
@@ -298,16 +303,16 @@ const createSampleBooks = (): BookEntry[] => [
   }
 ];
 
-const createSampleWishLists = (): WishList[] => [
+const createDefaultShoppingLists = (): WishList[] => [
   {
     id: uid(),
     name: 'Grocery List',
-    items: [{ id: uid(), name: 'Eggs', purchased: false }]
+    items: []
   },
   {
     id: uid(),
     name: 'Wish List',
-    items: [{ id: uid(), name: 'Mechanical Keyboard', price: 120, purchased: false }]
+    items: []
   }
 ];
 
@@ -364,7 +369,7 @@ const createDefaultCloudState = (): CloudAppState => {
       completions: {}
     },
     shoppingLists: {
-      lists: createSampleWishLists()
+      lists: createDefaultShoppingLists()
     },
     budget: createDefaultBudget(),
     mediaList: {
@@ -404,7 +409,7 @@ const createBlankCloudState = (): CloudAppState => {
       completions: {}
     },
     shoppingLists: {
-      lists: []
+      lists: createDefaultShoppingLists()
     },
     budget: createDefaultBudget(),
     mediaList: {
@@ -475,6 +480,16 @@ const normalizeWorkoutPrograms = (programs: WorkoutProgram[]): WorkoutProgram[] 
       acc[day] = (program.days?.[day] ?? []).map(normalizeWorkoutItem);
       return acc;
     }, {} as WorkoutProgram['days'])
+  }));
+};
+
+const normalizeWishLists = (lists: WishList[]): WishList[] => {
+  return lists.map((list) => ({
+    ...list,
+    items: (list.items ?? []).map((item) => ({
+      ...item,
+      quantity: clampNumber(item.quantity ?? 1) || 1
+    }))
   }));
 };
 
@@ -789,6 +804,7 @@ const fromCloudState = (payload: Partial<CloudAppState>): CloudAppState => {
     themeMode?: ThemeMode;
     themeColors?: ThemeColors;
     fontFamily?: FontFamilyOption;
+    language?: LanguageOption;
     settings?: {
       themeSettings?: { mode?: ThemeMode };
       colorSettings?: {
@@ -796,6 +812,7 @@ const fromCloudState = (payload: Partial<CloudAppState>): CloudAppState => {
         accentColor?: string;
         secondaryColor?: string;
         backgroundColor?: string;
+        panelColor?: string;
         cardColor?: string;
       };
     };
@@ -823,13 +840,21 @@ const fromCloudState = (payload: Partial<CloudAppState>): CloudAppState => {
         legacyThemePayload.themeColors?.backgroundColor ??
         legacyThemePayload.settings?.colorSettings?.backgroundColor ??
         defaults.themeSettings.colors.backgroundColor,
+      panelColor:
+        incomingTheme?.colors?.panelColor ??
+        legacyThemePayload.themeColors?.panelColor ??
+        legacyThemePayload.settings?.colorSettings?.panelColor ??
+        incomingTheme?.colors?.primaryColor ??
+        legacyThemePayload.themeColors?.primaryColor ??
+        defaults.themeSettings.colors.panelColor,
       cardColor:
         incomingTheme?.colors?.cardColor ??
         legacyThemePayload.themeColors?.cardColor ??
         legacyThemePayload.settings?.colorSettings?.cardColor ??
         defaults.themeSettings.colors.cardColor
     },
-    fontFamily: incomingTheme?.fontFamily ?? legacyThemePayload.fontFamily ?? defaults.themeSettings.fontFamily
+    fontFamily: incomingTheme?.fontFamily ?? legacyThemePayload.fontFamily ?? defaults.themeSettings.fontFamily,
+    language: incomingTheme?.language ?? legacyThemePayload.language ?? defaults.themeSettings.language
   };
 
   const budgetRaw = payload.budget ?? defaults.budget;
@@ -859,10 +884,11 @@ const fromCloudState = (payload: Partial<CloudAppState>): CloudAppState => {
       };
     })(),
     shoppingLists: {
-      lists:
+      lists: normalizeWishLists(
         payload.shoppingLists?.lists ??
-        (payload as unknown as { wishLists?: { lists?: WishList[] } }).wishLists?.lists ??
-        defaults.shoppingLists.lists
+          (payload as unknown as { wishLists?: { lists?: WishList[] } }).wishLists?.lists ??
+          defaults.shoppingLists.lists
+      )
     },
     budget,
     mediaList: {
@@ -1500,6 +1526,13 @@ export const useHabitStore = create<HabitStore>()(
             fontFamily: value
           }
         })),
+      setLanguage: (value) =>
+        set((state) => ({
+          themeSettings: {
+            ...state.themeSettings,
+            language: value
+          }
+        })),
       setDailyGoal: (value) =>
         set((state) => ({
           habits: {
@@ -1842,7 +1875,7 @@ export const useHabitStore = create<HabitStore>()(
             lists: state.shoppingLists.lists.filter((list) => list.id !== listId)
           }
         })),
-      addShoppingItem: (listId, name, price) =>
+      addShoppingItem: (listId, name, price, quantity) =>
         set((state) => ({
           shoppingLists: {
             ...state.shoppingLists,
@@ -1856,6 +1889,7 @@ export const useHabitStore = create<HabitStore>()(
                         id: uid(),
                         name: name.trim(),
                         price: price === undefined ? undefined : clampNumber(price),
+                        quantity: clampNumber(quantity ?? 1) || 1,
                         purchased: false
                       }
                     ]
@@ -2099,7 +2133,7 @@ export const useHabitStore = create<HabitStore>()(
     }),
     {
       name: 'habit-weekly-planner-store',
-      version: 6,
+      version: 7,
       partialize: (state) => ({
         weeklyPlanner: state.weeklyPlanner,
         habits: state.habits,
