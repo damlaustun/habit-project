@@ -164,7 +164,7 @@ const BookDetailPage = ({
                   setEditing(false);
                 }}
                 className="rounded px-2 py-1 text-xs font-semibold text-white"
-                style={{ backgroundColor: 'var(--secondary-color)' }}
+                style={{ backgroundColor: 'var(--secondary-color)', color: 'var(--on-secondary-color)' }}
               >
                 Save
               </button>
@@ -193,7 +193,7 @@ const BookDetailPage = ({
               setPagesInput(0);
             }}
             className="rounded px-3 py-1 text-sm font-semibold text-white"
-            style={{ backgroundColor: 'var(--secondary-color)' }}
+            style={{ backgroundColor: 'var(--secondary-color)', color: 'var(--on-secondary-color)' }}
           >
             Log pages
           </button>

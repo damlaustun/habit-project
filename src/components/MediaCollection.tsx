@@ -35,7 +35,11 @@ const MediaCollection = ({ items, onAddItem, onToggleItem, onDeleteItem }: Media
         <input value={title} onChange={(event) => setTitle(event.target.value)} placeholder="Title" className="rounded border border-slate-300 px-2 py-1.5 text-sm dark:border-slate-600 dark:bg-slate-900" />
         <input value={genre} onChange={(event) => setGenre(event.target.value)} placeholder="Genre" className="rounded border border-slate-300 px-2 py-1.5 text-sm dark:border-slate-600 dark:bg-slate-900" />
         <input value={notes} onChange={(event) => setNotes(event.target.value)} placeholder="Notes" className="rounded border border-slate-300 px-2 py-1.5 text-sm dark:border-slate-600 dark:bg-slate-900" />
-        <button type="submit" className="rounded px-2 py-1.5 text-sm font-semibold text-white" style={{ backgroundColor: 'var(--secondary-color)' }}>
+        <button
+          type="submit"
+          className="rounded px-2 py-1.5 text-sm font-semibold"
+          style={{ backgroundColor: 'var(--secondary-color)', color: 'var(--on-secondary-color)' }}
+        >
           Add
         </button>
       </form>
@@ -51,9 +55,20 @@ const MediaCollection = ({ items, onAddItem, onToggleItem, onDeleteItem }: Media
               <button type="button" onClick={() => onToggleItem(item.id)} className="rounded border border-slate-300 px-2 py-1 text-xs dark:border-slate-600">
                 {item.completed ? 'Undo' : 'Done'}
               </button>
-              <button type="button" onClick={() => onDeleteItem(item.id)} className="text-xs text-rose-600">
-                Delete
-              </button>
+              <details className="relative">
+                <summary className="cursor-pointer list-none rounded border border-slate-300 px-2 py-1 text-xs dark:border-slate-600">
+                  Edit
+                </summary>
+                <div className="absolute right-0 z-20 mt-1 w-24 rounded border border-slate-200 bg-[var(--card-color)] p-1 shadow-lg dark:border-slate-700">
+                  <button
+                    type="button"
+                    onClick={() => onDeleteItem(item.id)}
+                    className="block w-full rounded px-2 py-1 text-left text-xs hover:bg-slate-100 dark:hover:bg-slate-800"
+                  >
+                    Delete
+                  </button>
+                </div>
+              </details>
             </div>
           </div>
         ))}

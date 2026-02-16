@@ -4,7 +4,12 @@ type PointsHeaderProps = {
   totalPoints: number;
   dailyPoints: number;
   dailyGoal: number;
-  weeklyGoal: number;
+  level: number;
+  levelProgress: {
+    completed: number;
+    total: number;
+    percent: number;
+  };
   weekLabel: string;
   readOnly: boolean;
   userName: string;
@@ -18,7 +23,8 @@ const PointsHeader = ({
   totalPoints,
   dailyPoints,
   dailyGoal,
-  weeklyGoal,
+  level,
+  levelProgress,
   weekLabel,
   readOnly,
   userName,
@@ -66,6 +72,9 @@ const PointsHeader = ({
               )}
             </span>
             <span>{userName}</span>
+            <span className="rounded-full border border-slate-300 px-2 py-0.5 text-xs font-semibold text-slate-700 dark:border-slate-600 dark:text-slate-200">
+              Lv {level}
+            </span>
           </button>
 
           <button
@@ -85,7 +94,7 @@ const PointsHeader = ({
         </div>
 
         <GoalProgressBar label="Daily Goal Progress" value={dailyPoints} goal={dailyGoal} />
-        <GoalProgressBar label="Weekly Goal Progress" value={totalPoints} goal={weeklyGoal} />
+        <GoalProgressBar label="Level Progress" value={levelProgress.completed} goal={levelProgress.total} unit="items" />
       </div>
     </header>
   );

@@ -45,7 +45,7 @@ const WishListManager = ({
         <button
           type="submit"
           className="rounded-md px-3 py-2 text-sm font-semibold text-white"
-          style={{ backgroundColor: 'var(--secondary-color)' }}
+          style={{ backgroundColor: 'var(--secondary-color)', color: 'var(--on-secondary-color)' }}
         >
           Add List
         </button>
@@ -114,7 +114,7 @@ const WishListManager = ({
                     setRenameListId(null);
                   }}
                   className="rounded px-2 py-1 text-xs font-semibold text-white"
-                  style={{ backgroundColor: 'var(--secondary-color)' }}
+                  style={{ backgroundColor: 'var(--secondary-color)', color: 'var(--on-secondary-color)' }}
                 >
                   Save
                 </button>
@@ -154,7 +154,7 @@ const WishListManager = ({
                       setAddItemListId(null);
                     }}
                     className="rounded px-2 py-1 text-xs font-semibold text-white"
-                    style={{ backgroundColor: 'var(--secondary-color)' }}
+                    style={{ backgroundColor: 'var(--secondary-color)', color: 'var(--on-secondary-color)' }}
                   >
                     Save
                   </button>

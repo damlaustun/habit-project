@@ -2,9 +2,10 @@ type GoalProgressBarProps = {
   label: string;
   value: number;
   goal: number;
+  unit?: string;
 };
 
-const GoalProgressBar = ({ label, value, goal }: GoalProgressBarProps) => {
+const GoalProgressBar = ({ label, value, goal, unit = 'pts' }: GoalProgressBarProps) => {
   const percent = goal <= 0 ? 0 : Math.min(100, Math.round((value / goal) * 100));
 
   return (
@@ -12,7 +13,7 @@ const GoalProgressBar = ({ label, value, goal }: GoalProgressBarProps) => {
       <div className="flex items-center justify-between text-sm text-slate-600 dark:text-slate-300">
         <span>{label}</span>
         <span>
-          {value}/{goal} pts
+          {value}/{goal} {unit}
         </span>
       </div>
 

@@ -7,14 +7,12 @@ type SettingsPanelProps = {
   themeColors: ThemeColors;
   fontFamily: FontFamilyOption;
   dailyGoal: number;
-  weeklyGoal: number;
   lockPastWeeks: boolean;
   onClose: () => void;
   onThemeModeChange: (mode: ThemeMode) => void;
   onThemeColorChange: <K extends keyof ThemeColors>(key: K, value: ThemeColors[K]) => void;
   onFontFamilyChange: (value: FontFamilyOption) => void;
   onDailyGoalChange: (value: number) => void;
-  onWeeklyGoalChange: (value: number) => void;
   onLockPastWeeksChange: (value: boolean) => void;
   onResetApp: () => void;
 };
@@ -25,14 +23,12 @@ const SettingsPanel = ({
   themeColors,
   fontFamily,
   dailyGoal,
-  weeklyGoal,
   lockPastWeeks,
   onClose,
   onThemeModeChange,
   onThemeColorChange,
   onFontFamilyChange,
   onDailyGoalChange,
-  onWeeklyGoalChange,
   onLockPastWeeksChange,
   onResetApp
 }: SettingsPanelProps) => {
@@ -70,8 +66,8 @@ const SettingsPanel = ({
           </section>
 
           <section>
-            <h3 className="mb-2 text-xs font-semibold uppercase tracking-wide text-slate-500">Point Goals</h3>
-            <div className="grid gap-3 sm:grid-cols-2">
+            <h3 className="mb-2 text-xs font-semibold uppercase tracking-wide text-slate-500">Daily Goal</h3>
+            <div className="grid gap-3 sm:grid-cols-1">
               <label className="rounded-lg border border-slate-200 p-3 dark:border-slate-700">
                 <span className="mb-1 block text-sm text-slate-700 dark:text-slate-200">Daily goal</span>
                 <input
@@ -79,17 +75,6 @@ const SettingsPanel = ({
                   min={0}
                   value={dailyGoal}
                   onChange={(event) => onDailyGoalChange(Number(event.target.value))}
-                  className="w-full rounded border border-slate-300 px-2 py-1 text-sm dark:border-slate-600 dark:bg-slate-900"
-                />
-              </label>
-
-              <label className="rounded-lg border border-slate-200 p-3 dark:border-slate-700">
-                <span className="mb-1 block text-sm text-slate-700 dark:text-slate-200">Weekly goal</span>
-                <input
-                  type="number"
-                  min={0}
-                  value={weeklyGoal}
-                  onChange={(event) => onWeeklyGoalChange(Number(event.target.value))}
                   className="w-full rounded border border-slate-300 px-2 py-1 text-sm dark:border-slate-600 dark:bg-slate-900"
                 />
               </label>

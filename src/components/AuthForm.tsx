@@ -38,7 +38,7 @@ const AuthForm = ({ busy, errorMessage, noticeMessage, onLogin, onSignup }: Auth
             onClick={() => setMode('login')}
             className={`rounded-lg px-3 py-1.5 text-sm ${
               mode === 'login'
-                ? 'bg-[var(--secondary-color)] text-white'
+                ? 'bg-[var(--secondary-color)] text-[var(--on-secondary-color)]'
                 : 'border border-slate-300 text-slate-600 dark:border-slate-600 dark:text-slate-300'
             }`}
           >
@@ -49,7 +49,7 @@ const AuthForm = ({ busy, errorMessage, noticeMessage, onLogin, onSignup }: Auth
             onClick={() => setMode('signup')}
             className={`rounded-lg px-3 py-1.5 text-sm ${
               mode === 'signup'
-                ? 'bg-[var(--secondary-color)] text-white'
+                ? 'bg-[var(--secondary-color)] text-[var(--on-secondary-color)]'
                 : 'border border-slate-300 text-slate-600 dark:border-slate-600 dark:text-slate-300'
             }`}
           >
@@ -106,8 +106,8 @@ const AuthForm = ({ busy, errorMessage, noticeMessage, onLogin, onSignup }: Auth
           <button
             type="submit"
             disabled={busy}
-            className="w-full rounded-lg py-2 text-sm font-semibold text-white disabled:opacity-60"
-            style={{ backgroundColor: 'var(--secondary-color)' }}
+            className="w-full rounded-lg py-2 text-sm font-semibold disabled:opacity-60"
+            style={{ backgroundColor: 'var(--secondary-color)', color: 'var(--on-secondary-color)' }}
           >
             {busy ? 'Please wait...' : mode === 'login' ? 'Login' : 'Create account'}
           </button>

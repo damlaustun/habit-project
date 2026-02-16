@@ -68,14 +68,38 @@ export const getWorkoutProgress = (program: WorkoutProgram) => {
 };
 
 export const getBudgetSummary = (month: BudgetMonth) => {
-  const totalExpenses = month.expenses.reduce((sum, expense) => sum + expense.amount, 0);
+  const totalFixedExpenses = month.fixedExpenses.reduce((sum, expense) => sum + expense.amount, 0);
+  const totalExtraExpenses = month.extraExpenses.reduce((sum, expense) => sum + expense.amount, 0);
+  const totalExpenses = totalFixedExpenses + totalExtraExpenses;
   const remaining = month.income - totalExpenses;
   const savings = Math.max(0, remaining);
 
   return {
     income: month.income,
+    totalFixedExpenses,
+    totalExtraExpenses,
     totalExpenses,
     remaining,
     savings
   };
+};
+
+export const getWeekCompletionStats = (plan: WeeklyPlan) => {
+  const habits = Object.values(plan.days).flatMap((day) => day.habits);
+  const agenda = Object.values(plan.days).flatMap((day) => day.agenda);
+  const total = habits.length + agenda.length;
+  const completed = habits.filter((item) => item.completed).length + agenda.filter((item) => item.completed).length;
+  const percent = total === 0 ? 0 : Math.round((completed / total) * 100);
+
+  return { completed, total, percent };
+};
+
+export const isWeekFullyCompleted = (plan: WeeklyPlan): boolean => {
+  const stats = getWeekCompletionStats(plan);
+  const total = stats.total;
+  if (total === 0) {
+    return false;
+  }
+
+  return stats.completed === stats.total;
 };

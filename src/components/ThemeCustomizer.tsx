@@ -33,7 +33,7 @@ const ThemeCustomizer = ({
               className={clsx(
                 'rounded-lg border px-3 py-1.5 text-sm capitalize transition',
                 mode === item
-                  ? 'border-[var(--secondary-color)] bg-[var(--secondary-color)] text-white'
+                  ? 'border-[var(--secondary-color)] bg-[var(--secondary-color)] text-[var(--on-secondary-color)]'
                   : 'border-slate-300 text-slate-700 dark:border-slate-600 dark:text-slate-200'
               )}
             >
@@ -96,6 +96,9 @@ const ThemeCustomizer = ({
           <option value="inter">Inter</option>
           <option value="poppins">Poppins</option>
           <option value="roboto">Roboto</option>
+          <option value="manrope">Manrope</option>
+          <option value="nunito">Nunito</option>
+          <option value="lora">Lora</option>
         </select>
       </div>
     </div>

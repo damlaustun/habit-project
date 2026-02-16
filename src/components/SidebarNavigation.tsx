@@ -23,11 +23,11 @@ const SidebarNavigation = ({ currentPath, onNavigate }: SidebarNavigationProps) 
             key={item.path}
             type="button"
             onClick={() => onNavigate(item.path)}
-            className={`w-full rounded-lg px-3 py-2 text-left text-sm transition lg:text-left ${
-              currentPath === item.path || (item.path === '/books' && currentPath.startsWith('/books/'))
-                ? 'bg-[var(--secondary-color)] text-white'
-                : 'text-slate-700 hover:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-800'
-            }`}
+              className={`w-full rounded-lg px-3 py-2 text-left text-sm transition lg:text-left ${
+                currentPath === item.path || (item.path === '/books' && currentPath.startsWith('/books/'))
+                  ? 'bg-[var(--secondary-color)] text-[var(--on-secondary-color)]'
+                  : 'text-slate-700 hover:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-800'
+              }`}
           >
             {item.label}
           </button>

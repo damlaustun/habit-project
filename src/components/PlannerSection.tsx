@@ -22,7 +22,10 @@ const PlannerSection = ({
   const [eventTime, setEventTime] = useState('');
 
   return (
-    <section className="rounded-xl border border-slate-200 bg-[var(--card-color)] p-3 dark:border-slate-700">
+    <section
+      className="rounded-xl border border-slate-200 p-3 dark:border-slate-700"
+      style={{ backgroundColor: 'color-mix(in srgb, var(--card-color) 70%, var(--secondary-color) 8%)' }}
+    >
       <h4 className="mb-3 text-sm font-semibold text-slate-800 dark:text-slate-100">Weekly Planner / Agenda</h4>
 
       <form
@@ -55,8 +58,8 @@ const PlannerSection = ({
         <button
           type="submit"
           disabled={readOnly}
-          className="rounded-md px-2 py-1.5 text-xs font-semibold text-white disabled:opacity-50"
-          style={{ backgroundColor: 'var(--secondary-color)' }}
+          className="rounded-md px-2 py-1.5 text-xs font-semibold disabled:opacity-50"
+          style={{ backgroundColor: 'var(--secondary-color)', color: 'var(--on-secondary-color)' }}
         >
           Add
         </button>
@@ -85,14 +88,21 @@ const PlannerSection = ({
                     {item.eventTime}
                   </span>
                 ) : null}
-                <button
-                  type="button"
-                  onClick={() => onDeletePlannerItem(day, item.id)}
-                  disabled={readOnly}
-                  className="text-xs text-rose-600 disabled:opacity-50"
-                >
-                  Delete
-                </button>
+                <details className="relative">
+                  <summary className="cursor-pointer list-none rounded border border-slate-300 px-2 py-0.5 text-[11px] dark:border-slate-600">
+                    Edit
+                  </summary>
+                  <div className="absolute right-0 z-20 mt-1 w-32 rounded border border-slate-200 bg-[var(--card-color)] p-1 shadow-lg dark:border-slate-700">
+                    <button
+                      type="button"
+                      onClick={() => onDeletePlannerItem(day, item.id)}
+                      disabled={readOnly}
+                      className="block w-full rounded px-2 py-1 text-left text-xs hover:bg-slate-100 disabled:opacity-50 dark:hover:bg-slate-800"
+                    >
+                      Delete item
+                    </button>
+                  </div>
+                </details>
               </div>
             </div>
           </div>

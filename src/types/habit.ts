@@ -168,7 +168,8 @@ export type ExpenseItem = {
 export type BudgetMonth = {
   monthKey: string;
   income: number;
-  expenses: ExpenseItem[];
+  fixedExpenses: ExpenseItem[];
+  extraExpenses: ExpenseItem[];
 };
 
 export type MediaType = 'movie' | 'tv' | 'book';
@@ -191,6 +192,12 @@ export type NoteItem = {
   updatedAt: string;
 };
 
+export type NoteFolder = {
+  id: string;
+  name: string;
+  notes: NoteItem[];
+};
+
 export type ThemeMode = 'light' | 'dark' | 'system';
 
 export type ThemeColors = {
@@ -200,7 +207,7 @@ export type ThemeColors = {
   cardColor: string;
 };
 
-export type FontFamilyOption = 'system' | 'inter' | 'poppins' | 'roboto';
+export type FontFamilyOption = 'system' | 'inter' | 'poppins' | 'roboto' | 'manrope' | 'nunito' | 'lora';
 
 export type UserProfile = {
   name: string;

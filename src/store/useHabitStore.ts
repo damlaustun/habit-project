@@ -14,6 +14,7 @@ import type {
   HabitPriority,
   MediaItem,
   MediaType,
+  NoteFolder,
   NoteItem,
   PlannerInput,
   PlannerItem,
@@ -54,7 +55,6 @@ type HabitsSlice = {
   recurrenceRules: Record<string, RecurringHabitTemplate>;
   habitOverrides: Record<string, HabitOverride>;
   dailyGoal: number;
-  weeklyGoal: number;
   lockPastWeeks: boolean;
 };
 
@@ -64,6 +64,7 @@ type BooksSlice = {
 
 type SportsSlice = {
   programs: WorkoutProgram[];
+  completions: Record<string, boolean>;
 };
 
 type ShoppingListsSlice = {
@@ -80,7 +81,7 @@ type MediaListSlice = {
 };
 
 type NotesSlice = {
-  items: NoteItem[];
+  folders: NoteFolder[];
 };
 
 type ThemeSettingsSlice = {
@@ -154,7 +155,6 @@ type HabitStore = CloudAppState & {
   setThemeColor: <K extends keyof ThemeColors>(key: K, value: ThemeColors[K]) => void;
   setFontFamily: (value: FontFamilyOption) => void;
   setDailyGoal: (value: number) => void;
-  setWeeklyGoal: (value: number) => void;
   setLockPastWeeks: (enabled: boolean) => void;
   resetAppData: () => void;
 
@@ -206,16 +206,20 @@ type HabitStore = CloudAppState & {
   toggleShoppingItem: (listId: string, itemId: string) => void;
 
   setMonthlyIncome: (monthKey: string, income: number) => void;
+  addFixedExpense: (monthKey: string, input: { name: string; amount: number; category?: string }) => void;
   addExpense: (monthKey: string, input: { name: string; amount: number; category?: string }) => void;
-  deleteExpense: (monthKey: string, expenseId: string) => void;
+  deleteExpense: (monthKey: string, expenseId: string, section: 'fixed' | 'extra') => void;
 
   addMediaItem: (input: { type: MediaType; title: string; genre?: string; notes?: string }) => void;
   toggleMediaItem: (itemId: string) => void;
   deleteMediaItem: (itemId: string) => void;
 
-  addNote: (input: { title: string; content?: string }) => void;
-  updateNote: (noteId: string, patch: { title?: string; content?: string }) => void;
-  deleteNote: (noteId: string) => void;
+  addNoteFolder: (name: string) => void;
+  renameNoteFolder: (folderId: string, name: string) => void;
+  deleteNoteFolder: (folderId: string) => void;
+  addNote: (folderId: string, input: { title: string; content?: string }) => void;
+  updateNote: (folderId: string, noteId: string, patch: { title?: string; content?: string }) => void;
+  deleteNote: (folderId: string, noteId: string) => void;
 };
 
 const CLOUD_STATE_WEEK_LABEL = '__APP_STATE_V3__';
@@ -261,13 +265,19 @@ const createSampleSportsProgram = (): WorkoutProgram => ({
   }
 });
 
-const createSampleNotes = (): NoteItem[] => [
+const createSampleNotes = (): NoteFolder[] => [
   {
     id: uid(),
-    title: 'Weekly focus',
-    content: 'Main priority: consistency over intensity.',
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString()
+    name: 'General',
+    notes: [
+      {
+        id: uid(),
+        title: 'Weekly focus',
+        content: 'Main priority: consistency over intensity.',
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString()
+      }
+    ]
   }
 ];
 
@@ -321,7 +331,8 @@ const createDefaultBudget = (): BudgetSlice => {
       [monthKey]: {
         monthKey,
         income: 0,
-        expenses: []
+        fixedExpenses: [],
+        extraExpenses: []
       }
     }
   };
@@ -343,14 +354,14 @@ const createDefaultCloudState = (): CloudAppState => {
       recurrenceRules: {},
       habitOverrides: {},
       dailyGoal: 20,
-      weeklyGoal: 100,
       lockPastWeeks: false
     },
     books: {
       entries: createSampleBooks()
     },
     sports: {
-      programs: [createSampleSportsProgram()]
+      programs: [createSampleSportsProgram()],
+      completions: {}
     },
     shoppingLists: {
       lists: createSampleWishLists()
@@ -360,7 +371,47 @@ const createDefaultCloudState = (): CloudAppState => {
       items: createSampleMedia()
     },
     notes: {
-      items: createSampleNotes()
+      folders: createSampleNotes()
+    },
+    userProfile: defaultUserProfile,
+    themeSettings: defaultThemeSettings
+  };
+};
+
+const createBlankCloudState = (): CloudAppState => {
+  const currentWeekId = getCurrentWeekId();
+  const week = createEmptyWeek(currentWeekId);
+
+  return {
+    weeklyPlanner: {
+      currentWeekId,
+      currentWeekLabel: week.weekLabel,
+      weeks: {
+        [currentWeekId]: week
+      }
+    },
+    habits: {
+      recurrenceRules: {},
+      habitOverrides: {},
+      dailyGoal: 20,
+      lockPastWeeks: false
+    },
+    books: {
+      entries: []
+    },
+    sports: {
+      programs: [],
+      completions: {}
+    },
+    shoppingLists: {
+      lists: []
+    },
+    budget: createDefaultBudget(),
+    mediaList: {
+      items: []
+    },
+    notes: {
+      folders: []
     },
     userProfile: defaultUserProfile,
     themeSettings: defaultThemeSettings
@@ -409,6 +460,7 @@ const normalizeWorkoutItem = (item: WorkoutProgram['days'][DayId][number]) => {
 
   return {
     ...item,
+    completed: Boolean(item.completed),
     sets: hasSetRep ? clampNumber(Number(sets)) : undefined,
     reps: hasSetRep ? clampNumber(Number(reps)) : undefined,
     durationMin: hasSetRep ? undefined : item.durationMin ? clampNumber(item.durationMin) : undefined
@@ -424,6 +476,28 @@ const normalizeWorkoutPrograms = (programs: WorkoutProgram[]): WorkoutProgram[] 
       return acc;
     }, {} as WorkoutProgram['days'])
   }));
+};
+
+const getWorkoutCompletionKey = (weekId: string, programId: string, day: DayId, itemId: string): string =>
+  `${weekId}:${programId}:${day}:${itemId}`;
+
+const buildLegacyWorkoutCompletions = (
+  weekId: string,
+  programs: WorkoutProgram[]
+): Record<string, boolean> => {
+  const completions: Record<string, boolean> = {};
+
+  programs.forEach((program) => {
+    DAY_ORDER.forEach((day) => {
+      program.days[day].forEach((item) => {
+        if (item.completed) {
+          completions[getWorkoutCompletionKey(weekId, program.id, day, item.id)] = true;
+        }
+      });
+    });
+  });
+
+  return completions;
 };
 
 const normalizeWeek = (plan: WeeklyPlan, weekId: string): WeeklyPlan => {
@@ -625,8 +699,26 @@ const updateWeekForCurrent = (
 const getDefaultMonth = (monthKey: string): BudgetMonth => ({
   monthKey,
   income: 0,
-  expenses: []
+  fixedExpenses: [],
+  extraExpenses: []
 });
+
+const normalizeBudgetMonths = (months: Record<string, BudgetMonth>): Record<string, BudgetMonth> => {
+  return Object.fromEntries(
+    Object.entries(months).map(([monthKey, month]) => {
+      const legacyMonth = month as unknown as BudgetMonth & { expenses?: ExpenseItem[] };
+      return [
+        monthKey,
+        {
+          monthKey: month.monthKey ?? monthKey,
+          income: clampNumber(month.income ?? 0),
+          fixedExpenses: month.fixedExpenses ?? [],
+          extraExpenses: month.extraExpenses ?? legacyMonth.expenses ?? []
+        }
+      ];
+    })
+  );
+};
 
 const ensureBudgetMonth = (budget: BudgetSlice, monthKey: string): BudgetSlice => {
   if (budget.months[monthKey]) {
@@ -664,7 +756,6 @@ const fromCloudState = (payload: Partial<CloudAppState>): CloudAppState => {
       recurringHabits?: Record<string, RecurringHabitTemplate>;
       habitOverrides?: Record<string, HabitOverride>;
       dailyGoal?: number;
-      weeklyGoal?: number;
       lockPastWeeks?: boolean;
     });
 
@@ -675,7 +766,6 @@ const fromCloudState = (payload: Partial<CloudAppState>): CloudAppState => {
       defaults.habits.recurrenceRules,
     habitOverrides: habitsRaw.habitOverrides ?? defaults.habits.habitOverrides,
     dailyGoal: clampNumber(habitsRaw.dailyGoal ?? defaults.habits.dailyGoal),
-    weeklyGoal: clampNumber(habitsRaw.weeklyGoal ?? defaults.habits.weeklyGoal),
     lockPastWeeks: habitsRaw.lockPastWeeks ?? defaults.habits.lockPastWeeks
   };
 
@@ -747,7 +837,7 @@ const fromCloudState = (payload: Partial<CloudAppState>): CloudAppState => {
   const budget = ensureBudgetMonth(
     {
       currentMonthKey,
-      months: budgetRaw.months ?? defaults.budget.months
+      months: normalizeBudgetMonths(budgetRaw.months ?? defaults.budget.months)
     },
     currentMonthKey
   );
@@ -755,12 +845,19 @@ const fromCloudState = (payload: Partial<CloudAppState>): CloudAppState => {
   return {
     weeklyPlanner,
     habits,
+    // Workout progress is now week-based. Legacy completed flags are migrated into current selected week.
+    // This keeps old user data visible while enabling per-week reset behavior.
     books: {
       entries: payload.books?.entries ?? defaults.books.entries
     },
-    sports: {
-      programs: normalizeWorkoutPrograms(payload.sports?.programs ?? defaults.sports.programs)
-    },
+    sports: (() => {
+      const programs = normalizeWorkoutPrograms(payload.sports?.programs ?? defaults.sports.programs);
+      const legacy = buildLegacyWorkoutCompletions(currentWeekId, programs);
+      return {
+        programs,
+        completions: payload.sports?.completions ?? legacy
+      };
+    })(),
     shoppingLists: {
       lists:
         payload.shoppingLists?.lists ??
@@ -771,9 +868,24 @@ const fromCloudState = (payload: Partial<CloudAppState>): CloudAppState => {
     mediaList: {
       items: payload.mediaList?.items ?? defaults.mediaList.items
     },
-    notes: {
-      items: payload.notes?.items ?? defaults.notes.items
-    },
+    notes: (() => {
+      const legacyNotes = payload.notes as unknown as { items?: NoteItem[]; folders?: NoteFolder[] } | undefined;
+      if (legacyNotes?.folders && legacyNotes.folders.length > 0) {
+        return { folders: legacyNotes.folders };
+      }
+      if (legacyNotes?.items && legacyNotes.items.length > 0) {
+        return {
+          folders: [
+            {
+              id: uid(),
+              name: 'General',
+              notes: legacyNotes.items
+            }
+          ]
+        };
+      }
+      return { folders: defaults.notes.folders };
+    })(),
     userProfile: {
       ...defaults.userProfile,
       ...(payload.userProfile ?? {})
@@ -1395,13 +1507,6 @@ export const useHabitStore = create<HabitStore>()(
             dailyGoal: clampNumber(value)
           }
         })),
-      setWeeklyGoal: (value) =>
-        set((state) => ({
-          habits: {
-            ...state.habits,
-            weeklyGoal: clampNumber(value)
-          }
-        })),
       setLockPastWeeks: (enabled) =>
         set((state) => ({
           habits: {
@@ -1411,7 +1516,7 @@ export const useHabitStore = create<HabitStore>()(
         })),
       resetAppData: () =>
         set((state) => {
-          const defaults = createDefaultCloudState();
+          const defaults = createBlankCloudState();
           return {
             ...defaults,
             userAuth: state.userAuth,
@@ -1564,7 +1669,13 @@ export const useHabitStore = create<HabitStore>()(
         set((state) => ({
           sports: {
             ...state.sports,
-            programs: state.sports.programs.filter((program) => program.id !== programId)
+            programs: state.sports.programs.filter((program) => program.id !== programId),
+            completions: Object.fromEntries(
+              Object.entries(state.sports.completions).filter(([key]) => {
+                const [, pId] = key.split(':');
+                return pId !== programId;
+              })
+            )
           }
         })),
       addWorkoutItem: (programId, day, input) =>
@@ -1602,24 +1713,21 @@ export const useHabitStore = create<HabitStore>()(
           }
         })),
       toggleWorkoutItem: (programId, day, itemId) =>
-        set((state) => ({
-          sports: {
-            ...state.sports,
-            programs: state.sports.programs.map((program) =>
-              program.id === programId
-                ? {
-                    ...program,
-                    days: {
-                      ...program.days,
-                      [day]: program.days[day].map((item) =>
-                        item.id === itemId ? { ...item, completed: !item.completed } : item
-                      )
-                    }
-                  }
-                : program
-            )
-          }
-        })),
+        set((state) => {
+          const weekId = state.weeklyPlanner.currentWeekId;
+          const key = getWorkoutCompletionKey(weekId, programId, day, itemId);
+          const isCompleted = Boolean(state.sports.completions[key]);
+
+          return {
+            sports: {
+              ...state.sports,
+              completions: {
+                ...state.sports.completions,
+                [key]: !isCompleted
+              }
+            }
+          };
+        }),
       updateWorkoutItem: (programId, day, itemId, patch) =>
         set((state) => ({
           sports: {
@@ -1675,26 +1783,41 @@ export const useHabitStore = create<HabitStore>()(
                     }
                   }
                 : program
+            ),
+            completions: Object.fromEntries(
+              Object.entries(state.sports.completions).filter(([key]) => {
+                const [, pId, d, iId] = key.split(':');
+                return !(pId === programId && d === day && iId === itemId);
+              })
             )
           }
         })),
       clearWorkoutDay: (programId, day) =>
-        set((state) => ({
-          sports: {
-            ...state.sports,
-            programs: state.sports.programs.map((program) =>
-              program.id === programId
-                ? {
-                    ...program,
-                    days: {
-                      ...program.days,
-                      [day]: []
+        set((state) => {
+          const weekId = state.weeklyPlanner.currentWeekId;
+          return {
+            sports: {
+              ...state.sports,
+              programs: state.sports.programs.map((program) =>
+                program.id === programId
+                  ? {
+                      ...program,
+                      days: {
+                        ...program.days,
+                        [day]: []
+                      }
                     }
-                  }
-                : program
-            )
-          }
-        })),
+                  : program
+              ),
+              completions: Object.fromEntries(
+                Object.entries(state.sports.completions).filter(([key]) => {
+                  const [wId, pId, d] = key.split(':');
+                  return !(wId === weekId && pId === programId && d === day);
+                })
+              )
+            }
+          };
+        }),
 
       addShoppingList: (name) =>
         set((state) => ({
@@ -1775,6 +1898,31 @@ export const useHabitStore = create<HabitStore>()(
             }
           };
         }),
+      addFixedExpense: (monthKey, input) =>
+        set((state) => {
+          const budget = ensureBudgetMonth(state.budget, monthKey);
+          const expense: ExpenseItem = {
+            id: uid(),
+            name: input.name.trim(),
+            amount: Math.max(0, Number(input.amount) || 0),
+            category: input.category?.trim(),
+            createdAt: new Date().toISOString()
+          };
+
+          return {
+            budget: {
+              ...budget,
+              currentMonthKey: monthKey,
+              months: {
+                ...budget.months,
+                [monthKey]: {
+                  ...budget.months[monthKey],
+                  fixedExpenses: [expense, ...budget.months[monthKey].fixedExpenses]
+                }
+              }
+            }
+          };
+        }),
       addExpense: (monthKey, input) =>
         set((state) => {
           const budget = ensureBudgetMonth(state.budget, monthKey);
@@ -1794,13 +1942,13 @@ export const useHabitStore = create<HabitStore>()(
                 ...budget.months,
                 [monthKey]: {
                   ...budget.months[monthKey],
-                  expenses: [expense, ...budget.months[monthKey].expenses]
+                  extraExpenses: [expense, ...budget.months[monthKey].extraExpenses]
                 }
               }
             }
           };
         }),
-      deleteExpense: (monthKey, expenseId) =>
+      deleteExpense: (monthKey, expenseId, section) =>
         set((state) => {
           const budget = ensureBudgetMonth(state.budget, monthKey);
           return {
@@ -1810,7 +1958,14 @@ export const useHabitStore = create<HabitStore>()(
                 ...budget.months,
                 [monthKey]: {
                   ...budget.months[monthKey],
-                  expenses: budget.months[monthKey].expenses.filter((expense) => expense.id !== expenseId)
+                  fixedExpenses:
+                    section === 'fixed'
+                      ? budget.months[monthKey].fixedExpenses.filter((expense) => expense.id !== expenseId)
+                      : budget.months[monthKey].fixedExpenses,
+                  extraExpenses:
+                    section === 'extra'
+                      ? budget.months[monthKey].extraExpenses.filter((expense) => expense.id !== expenseId)
+                      : budget.months[monthKey].extraExpenses
                 }
               }
             }
@@ -1851,43 +2006,94 @@ export const useHabitStore = create<HabitStore>()(
             items: state.mediaList.items.filter((item) => item.id !== itemId)
           }
         })),
-      addNote: (input) =>
+      addNoteFolder: (name) =>
         set((state) => ({
           notes: {
             ...state.notes,
-            items: [
+            folders: [
+              ...state.notes.folders,
               {
                 id: uid(),
-                title: input.title.trim(),
-                content: input.content?.trim() ?? '',
-                createdAt: new Date().toISOString(),
-                updatedAt: new Date().toISOString()
-              },
-              ...state.notes.items
+                name: name.trim(),
+                notes: []
+              }
             ]
           }
         })),
-      updateNote: (noteId, patch) =>
+      renameNoteFolder: (folderId, name) =>
         set((state) => ({
           notes: {
             ...state.notes,
-            items: state.notes.items.map((note) =>
-              note.id === noteId
-                ? {
-                    ...note,
-                    title: patch.title === undefined ? note.title : patch.title.trim() || note.title,
-                    content: patch.content === undefined ? note.content : patch.content.trim(),
-                    updatedAt: new Date().toISOString()
-                  }
-                : note
+            folders: state.notes.folders.map((folder) =>
+              folder.id === folderId ? { ...folder, name: name.trim() || folder.name } : folder
             )
           }
         })),
-      deleteNote: (noteId) =>
+      deleteNoteFolder: (folderId) =>
         set((state) => ({
           notes: {
             ...state.notes,
-            items: state.notes.items.filter((note) => note.id !== noteId)
+            folders: state.notes.folders.filter((folder) => folder.id !== folderId)
+          }
+        })),
+      addNote: (folderId, input) =>
+        set((state) => ({
+          notes: {
+            ...state.notes,
+            folders: state.notes.folders.map((folder) =>
+              folder.id === folderId
+                ? {
+                    ...folder,
+                    notes: [
+                      {
+                        id: uid(),
+                        title: input.title.trim(),
+                        content: input.content?.trim() ?? '',
+                        createdAt: new Date().toISOString(),
+                        updatedAt: new Date().toISOString()
+                      },
+                      ...folder.notes
+                    ]
+                  }
+                : folder
+            )
+          }
+        })),
+      updateNote: (folderId, noteId, patch) =>
+        set((state) => ({
+          notes: {
+            ...state.notes,
+            folders: state.notes.folders.map((folder) =>
+              folder.id === folderId
+                ? {
+                    ...folder,
+                    notes: folder.notes.map((note) =>
+                      note.id === noteId
+                        ? {
+                            ...note,
+                            title: patch.title === undefined ? note.title : patch.title.trim() || note.title,
+                            content: patch.content === undefined ? note.content : patch.content.trim(),
+                            updatedAt: new Date().toISOString()
+                          }
+                        : note
+                    )
+                  }
+                : folder
+            )
+          }
+        })),
+      deleteNote: (folderId, noteId) =>
+        set((state) => ({
+          notes: {
+            ...state.notes,
+            folders: state.notes.folders.map((folder) =>
+              folder.id === folderId
+                ? {
+                    ...folder,
+                    notes: folder.notes.filter((note) => note.id !== noteId)
+                  }
+                : folder
+            )
           }
         }))
     }),

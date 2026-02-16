@@ -38,7 +38,7 @@ const ConfirmDialog = ({
             type="button"
             onClick={onConfirm}
             className="rounded-md px-3 py-1.5 text-sm font-semibold text-white"
-            style={{ backgroundColor: 'var(--secondary-color)' }}
+            style={{ backgroundColor: 'var(--secondary-color)', color: 'var(--on-secondary-color)' }}
           >
             {confirmLabel}
           </button>

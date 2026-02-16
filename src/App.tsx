@@ -20,9 +20,15 @@ import WishListManager from './components/WishListManager';
 import WorkoutPlanner from './components/WorkoutPlanner';
 import { isSupabaseConfigured, supabase } from './lib/supabase';
 import { getCloudStateWeekLabel, useHabitStore } from './store/useHabitStore';
-import type { DayId, FontFamilyOption, UserProfile } from './types/habit';
+import { DAY_ORDER, type DayId, type FontFamilyOption, type UserProfile } from './types/habit';
 import { addWeeksToId, getCurrentMonthKey, getCurrentWeekId, getTodayDayId } from './utils/date';
-import { getCompletedPointsForDay, getTaskCounts, getTotalCompletedPoints } from './utils/stats';
+import {
+  getCompletedPointsForDay,
+  getTaskCounts,
+  getTotalCompletedPoints,
+  getWeekCompletionStats,
+  isWeekFullyCompleted
+} from './utils/stats';
 
 const getFontStack = (font: FontFamilyOption): string => {
   switch (font) {
@@ -32,9 +38,34 @@ const getFontStack = (font: FontFamilyOption): string => {
       return "'Poppins', 'Segoe UI', sans-serif";
     case 'roboto':
       return "'Roboto', 'Segoe UI', sans-serif";
+    case 'manrope':
+      return "'Manrope', 'Segoe UI', sans-serif";
+    case 'nunito':
+      return "'Nunito', 'Segoe UI', sans-serif";
+    case 'lora':
+      return "'Lora', 'Georgia', serif";
     default:
       return "system-ui, -apple-system, 'Segoe UI', sans-serif";
   }
+};
+
+const getReadableTextColor = (hexColor: string): string => {
+  const clean = hexColor.replace('#', '').trim();
+  const expanded =
+    clean.length === 3
+      ? clean
+          .split('')
+          .map((char) => `${char}${char}`)
+          .join('')
+      : clean;
+
+  const valid = /^[0-9a-fA-F]{6}$/.test(expanded) ? expanded : '7e73aa';
+  const red = Number.parseInt(valid.slice(0, 2), 16);
+  const green = Number.parseInt(valid.slice(2, 4), 16);
+  const blue = Number.parseInt(valid.slice(4, 6), 16);
+  const luminance = (0.299 * red + 0.587 * green + 0.114 * blue) / 255;
+
+  return luminance > 0.6 ? '#0f172a' : '#f8fafc';
 };
 
 const App = () => {
@@ -100,7 +131,6 @@ const App = () => {
     setThemeColor,
     setFontFamily,
     setDailyGoal,
-    setWeeklyGoal,
     setLockPastWeeks,
     resetAppData,
 
@@ -127,6 +157,7 @@ const App = () => {
     toggleShoppingItem,
 
     setMonthlyIncome,
+    addFixedExpense,
     addExpense,
     deleteExpense,
 
@@ -136,13 +167,34 @@ const App = () => {
 
     addNote,
     updateNote,
-    deleteNote
+    deleteNote,
+    addNoteFolder,
+    renameNoteFolder,
+    deleteNoteFolder
   } = useHabitStore();
 
   const currentWeek = useMemo(() => getCurrentWeek(), [getCurrentWeek, weeklyPlanner]);
   const totalPoints = useMemo(() => getTotalCompletedPoints(currentWeek), [currentWeek]);
   const taskCounts = useMemo(() => getTaskCounts(currentWeek), [currentWeek]);
   const dailyPoints = useMemo(() => getCompletedPointsForDay(currentWeek, getTodayDayId()), [currentWeek]);
+  const weekCompletion = useMemo(() => getWeekCompletionStats(currentWeek), [currentWeek]);
+  const userLevel = useMemo(
+    () => 1 + Object.values(weeklyPlanner.weeks).filter((week) => isWeekFullyCompleted(week)).length,
+    [weeklyPlanner.weeks]
+  );
+  const sportsProgramsForSelectedWeek = useMemo(() => {
+    const weekId = weeklyPlanner.currentWeekId;
+    return sports.programs.map((program) => ({
+      ...program,
+      days: DAY_ORDER.reduce((acc, day) => {
+        acc[day] = program.days[day].map((item) => ({
+          ...item,
+          completed: Boolean(sports.completions[`${weekId}:${program.id}:${day}:${item.id}`])
+        }));
+        return acc;
+      }, {} as typeof program.days)
+    }));
+  }, [sports.programs, sports.completions, weeklyPlanner.currentWeekId]);
 
   const isCurrentWeek = weeklyPlanner.currentWeekId === getCurrentWeekId();
   const readOnly = isCurrentWeekReadOnly();
@@ -291,11 +343,11 @@ const App = () => {
     });
   };
 
-  const handleDeleteExpense = (monthKey: string, expenseId: string) => {
+  const handleDeleteExpense = (monthKey: string, expenseId: string, section: 'fixed' | 'extra') => {
     openConfirm({
       title: 'Delete expense',
       message: 'Are you sure you want to delete this expense?',
-      onConfirm: () => deleteExpense(monthKey, expenseId)
+      onConfirm: () => deleteExpense(monthKey, expenseId, section)
     });
   };
 
@@ -307,11 +359,19 @@ const App = () => {
     });
   };
 
-  const handleDeleteNote = (noteId: string) => {
+  const handleDeleteNoteFolder = (folderId: string) => {
+    openConfirm({
+      title: 'Delete folder',
+      message: 'Are you sure you want to delete this folder and all notes inside it?',
+      onConfirm: () => deleteNoteFolder(folderId)
+    });
+  };
+
+  const handleDeleteNote = (folderId: string, noteId: string) => {
     openConfirm({
       title: 'Delete note',
       message: 'Are you sure you want to delete this note?',
-      onConfirm: () => deleteNote(noteId)
+      onConfirm: () => deleteNote(folderId, noteId)
     });
   };
 
@@ -346,6 +406,11 @@ const App = () => {
     root.style.setProperty('--app-background', themeSettings.colors.backgroundColor);
     root.style.setProperty('--panel-color', themeSettings.colors.primaryColor);
     root.style.setProperty('--card-color', themeSettings.colors.cardColor);
+    root.style.setProperty('--on-primary-color', getReadableTextColor(themeSettings.colors.primaryColor));
+    root.style.setProperty('--on-secondary-color', getReadableTextColor(themeSettings.colors.secondaryColor));
+    root.style.setProperty('--on-background-color', getReadableTextColor(themeSettings.colors.backgroundColor));
+    root.style.setProperty('--on-panel-color', getReadableTextColor(themeSettings.colors.primaryColor));
+    root.style.setProperty('--on-card-color', getReadableTextColor(themeSettings.colors.cardColor));
     root.style.setProperty('--app-font-family', getFontStack(themeSettings.fontFamily));
 
     if (themeSettings.mode === 'system') {
@@ -604,7 +669,8 @@ const App = () => {
             totalPoints={totalPoints}
             dailyPoints={dailyPoints}
             dailyGoal={habits.dailyGoal}
-            weeklyGoal={habits.weeklyGoal}
+            level={userLevel}
+            levelProgress={weekCompletion}
             weekLabel={weeklyPlanner.currentWeekLabel}
             readOnly={readOnly}
             userName={userProfile.name}
@@ -700,17 +766,27 @@ const App = () => {
 
           {displayPath === '/sports' ? (
             <ModuleLayoutWrapper title="Workout Planner" subtitle="Plan workout programs by day and track completion">
-              <WorkoutPlanner
-                programs={sports.programs}
-                onAddProgram={addWorkoutProgram}
-                onUpdateProgram={updateWorkoutProgram}
-                onDeleteProgram={handleDeleteWorkoutProgram}
-                onAddWorkoutItem={addWorkoutItem}
-                onToggleWorkoutItem={toggleWorkoutItem}
-                onUpdateWorkoutItem={updateWorkoutItem}
-                onDeleteWorkoutItem={handleDeleteWorkoutItem}
-                onClearWorkoutDay={handleClearWorkoutDay}
-              />
+              <div className="space-y-3">
+                <WeekRangeHeader
+                  weekId={weeklyPlanner.currentWeekId}
+                  weekLabel={weeklyPlanner.currentWeekLabel}
+                  isCurrentWeek={isCurrentWeek}
+                  onPrevious={goPreviousWeekSafe}
+                  onNext={goNextWeekSafe}
+                  onWeekPick={setCurrentWeek}
+                />
+                <WorkoutPlanner
+                  programs={sportsProgramsForSelectedWeek}
+                  onAddProgram={addWorkoutProgram}
+                  onUpdateProgram={updateWorkoutProgram}
+                  onDeleteProgram={handleDeleteWorkoutProgram}
+                  onAddWorkoutItem={addWorkoutItem}
+                  onToggleWorkoutItem={toggleWorkoutItem}
+                  onUpdateWorkoutItem={updateWorkoutItem}
+                  onDeleteWorkoutItem={handleDeleteWorkoutItem}
+                  onClearWorkoutDay={handleClearWorkoutDay}
+                />
+              </div>
             </ModuleLayoutWrapper>
           ) : null}
 
@@ -733,6 +809,7 @@ const App = () => {
                 <BudgetDashboard
                   month={currentBudgetMonth}
                   onSetIncome={setMonthlyIncome}
+                  onAddFixedExpense={addFixedExpense}
                   onAddExpense={addExpense}
                   onDeleteExpense={handleDeleteExpense}
                 />
@@ -754,7 +831,10 @@ const App = () => {
           {displayPath === '/notes' ? (
             <ModuleLayoutWrapper title="Notes" subtitle="Keep quick notes in one place">
               <NotesBoard
-                items={notes.items}
+                folders={notes.folders}
+                onAddFolder={addNoteFolder}
+                onRenameFolder={renameNoteFolder}
+                onDeleteFolder={handleDeleteNoteFolder}
                 onAddNote={addNote}
                 onUpdateNote={updateNote}
                 onDeleteNote={handleDeleteNote}
@@ -777,14 +857,12 @@ const App = () => {
         themeColors={themeSettings.colors}
         fontFamily={themeSettings.fontFamily}
         dailyGoal={habits.dailyGoal}
-        weeklyGoal={habits.weeklyGoal}
         lockPastWeeks={habits.lockPastWeeks}
         onClose={() => setSettingsOpen(false)}
         onThemeModeChange={setThemeMode}
         onThemeColorChange={setThemeColor}
         onFontFamilyChange={setFontFamily}
         onDailyGoalChange={setDailyGoal}
-        onWeeklyGoalChange={setWeeklyGoal}
         onLockPastWeeksChange={setLockPastWeeks}
         onResetApp={handleResetApp}
       />

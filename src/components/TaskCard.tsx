@@ -162,7 +162,7 @@ const TaskCard = ({
               type="button"
               onClick={saveEdit}
               className="rounded-md px-2 py-1 text-xs font-semibold text-white"
-              style={{ backgroundColor: 'var(--secondary-color)' }}
+              style={{ backgroundColor: 'var(--secondary-color)', color: 'var(--on-secondary-color)' }}
             >
               Save
             </button>

@@ -32,15 +32,18 @@ const HabitSection = ({
   onUpdateDuration
 }: HabitSectionProps) => {
   return (
-    <section className="rounded-xl border border-slate-200 bg-[var(--card-color)] p-3 dark:border-slate-700">
+    <section
+      className="rounded-xl border border-slate-200 p-3 dark:border-slate-700"
+      style={{ backgroundColor: 'color-mix(in srgb, var(--card-color) 86%, white 14%)' }}
+    >
       <div className="mb-3 flex items-center justify-between">
         <h4 className="text-sm font-semibold text-slate-800 dark:text-slate-100">Daily Habits</h4>
         <button
           type="button"
           onClick={() => onAddHabit(day)}
           disabled={readOnly}
-          className="rounded-md px-2 py-1 text-xs font-semibold text-white disabled:opacity-50"
-          style={{ backgroundColor: 'var(--secondary-color)' }}
+          className="rounded-md px-2 py-1 text-xs font-semibold disabled:opacity-50"
+          style={{ backgroundColor: 'var(--secondary-color)', color: 'var(--on-secondary-color)' }}
         >
           + Habit
         </button>

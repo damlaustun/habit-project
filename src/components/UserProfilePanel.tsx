@@ -55,7 +55,7 @@ const UserProfilePanel = ({ open, email, profile, onClose, onSave }: UserProfile
             type="button"
             onClick={() => void onSave({ name: name.trim() || 'User', avatar })}
             className="w-full rounded-lg py-2 text-sm font-semibold text-white"
-            style={{ backgroundColor: 'var(--secondary-color)' }}
+            style={{ backgroundColor: 'var(--secondary-color)', color: 'var(--on-secondary-color)' }}
           >
             Save Profile
           </button>
