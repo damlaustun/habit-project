@@ -1,5 +1,5 @@
 import ThemeCustomizer from './ThemeCustomizer';
-import type { FontFamilyOption, LanguageOption, ThemeColors, ThemeMode } from '../types/habit';
+import type { FontFamilyOption, ThemeColors, ThemeMode } from '../types/habit';
 import { useI18n } from '../i18n/useI18n';
 
 type SettingsPanelProps = {
@@ -7,14 +7,12 @@ type SettingsPanelProps = {
   themeMode: ThemeMode;
   themeColors: ThemeColors;
   fontFamily: FontFamilyOption;
-  language: LanguageOption;
   dailyGoal: number;
   lockPastWeeks: boolean;
   onClose: () => void;
   onThemeModeChange: (mode: ThemeMode) => void;
   onThemeColorChange: <K extends keyof ThemeColors>(key: K, value: ThemeColors[K]) => void;
   onFontFamilyChange: (value: FontFamilyOption) => void;
-  onLanguageChange: (value: LanguageOption) => void;
   onDailyGoalChange: (value: number) => void;
   onLockPastWeeksChange: (value: boolean) => void;
   onResetApp: () => void;
@@ -25,14 +23,12 @@ const SettingsPanel = ({
   themeMode,
   themeColors,
   fontFamily,
-  language,
   dailyGoal,
   lockPastWeeks,
   onClose,
   onThemeModeChange,
   onThemeColorChange,
   onFontFamilyChange,
-  onLanguageChange,
   onDailyGoalChange,
   onLockPastWeeksChange,
   onResetApp
@@ -62,11 +58,9 @@ const SettingsPanel = ({
             <h3 className="mb-2 text-xs font-semibold uppercase tracking-wide text-slate-500">{t('themeAndColors')}</h3>
             <ThemeCustomizer
               mode={themeMode}
-              language={language}
               colors={themeColors}
               fontFamily={fontFamily}
               onModeChange={onThemeModeChange}
-              onLanguageChange={onLanguageChange}
               onColorChange={onThemeColorChange}
               onFontFamilyChange={onFontFamilyChange}
             />

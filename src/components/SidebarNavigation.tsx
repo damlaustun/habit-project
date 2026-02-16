@@ -20,7 +20,7 @@ const SidebarNavigation = ({ currentPath, onNavigate }: SidebarNavigationProps) 
   const { t } = useI18n();
 
   return (
-    <aside className="w-full rounded-2xl border border-slate-200 bg-[var(--panel-color)]/90 p-3 shadow-soft backdrop-blur-sm lg:max-w-[250px] dark:border-slate-700">
+    <aside className="w-full rounded-2xl border border-slate-200 bg-[var(--panel-color)] p-3 shadow-soft lg:max-w-[250px] dark:border-slate-700">
       <p className="mb-3 px-2 text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">{t('lifeOs')}</p>
       <nav className="grid grid-cols-2 gap-1 sm:grid-cols-3 lg:block lg:space-y-1">
         {items.map((item) => (

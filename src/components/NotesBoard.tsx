@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import type { NoteFolder } from '../types/habit';
 import { useI18n } from '../i18n/useI18n';
 
@@ -24,6 +24,7 @@ const NotesBoard = ({
   const { t } = useI18n();
   const [folderName, setFolderName] = useState('');
   const [selectedFolderId, setSelectedFolderId] = useState<string | null>(null);
+  const [selectedNoteId, setSelectedNoteId] = useState<string | null>(null);
 
   const [noteTitle, setNoteTitle] = useState('');
   const [noteContent, setNoteContent] = useState('');
@@ -39,6 +40,29 @@ const NotesBoard = ({
     () => folders.find((folder) => folder.id === selectedFolderId) ?? null,
     [folders, selectedFolderId]
   );
+
+  const selectedNote = useMemo(
+    () => selectedFolder?.notes.find((note) => note.id === selectedNoteId) ?? null,
+    [selectedFolder, selectedNoteId]
+  );
+
+  useEffect(() => {
+    if (!selectedFolder) {
+      setSelectedNoteId(null);
+      setEditingId(null);
+      return;
+    }
+
+    if (selectedFolder.notes.length === 0) {
+      setSelectedNoteId(null);
+      setEditingId(null);
+      return;
+    }
+
+    if (!selectedNoteId || !selectedFolder.notes.some((note) => note.id === selectedNoteId)) {
+      setSelectedNoteId(selectedFolder.notes[0].id);
+    }
+  }, [selectedFolder, selectedNoteId]);
 
   return (
     <div className="space-y-4">
@@ -176,7 +200,7 @@ const NotesBoard = ({
               value={noteContent}
               onChange={(event) => setNoteContent(event.target.value)}
               placeholder={t('noteContent')}
-              className="h-24 rounded border border-slate-300 px-2 py-1.5 text-sm dark:border-slate-600 dark:bg-slate-900"
+              className="h-20 rounded border border-slate-300 px-2 py-1.5 text-sm dark:border-slate-600 dark:bg-slate-900"
             />
             <button
               type="submit"
@@ -187,88 +211,107 @@ const NotesBoard = ({
             </button>
           </form>
 
-          <div className="space-y-2">
-            {selectedFolder.notes.map((note) => {
-            const isEditing = editingId === note.id;
-            return (
-              <article key={note.id} className="rounded-lg border border-slate-200 p-3 dark:border-slate-700">
-                {isEditing ? (
-                  <div className="space-y-2">
-                    <input
-                      value={editTitle}
-                      onChange={(event) => setEditTitle(event.target.value)}
-                      className="w-full rounded border border-slate-300 px-2 py-1.5 text-sm dark:border-slate-600 dark:bg-slate-900"
-                    />
-                    <textarea
-                      value={editContent}
-                      onChange={(event) => setEditContent(event.target.value)}
-                      className="h-24 w-full rounded border border-slate-300 px-2 py-1.5 text-sm dark:border-slate-600 dark:bg-slate-900"
-                    />
-                    <div className="flex justify-end gap-2">
-                      <button
-                        type="button"
-                        onClick={() => setEditingId(null)}
-                        className="rounded border border-slate-300 px-2 py-1 text-xs dark:border-slate-600"
-                      >
-                        {t('cancel')}
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => {
-                          if (!selectedFolder) return;
-                          onUpdateNote(selectedFolder.id, note.id, { title: editTitle, content: editContent });
-                          setEditingId(null);
-                        }}
-                        className="rounded px-2 py-1 text-xs font-semibold"
-                        style={{ backgroundColor: 'var(--secondary-color)', color: 'var(--on-secondary-color)' }}
-                      >
-                        {t('save')}
-                      </button>
-                    </div>
-                  </div>
-                ) : (
-                  <div className="flex items-start justify-between gap-3">
-                    <div className="min-w-0">
-                      <h4 className="font-semibold text-slate-900 dark:text-slate-100">{note.title}</h4>
-                      <p className="mt-1 whitespace-pre-wrap text-sm text-slate-600 dark:text-slate-300">{note.content || 'No content'}</p>
-                    </div>
-                    <details className="relative">
-                      <summary className="cursor-pointer list-none rounded border border-slate-300 px-2 py-1 text-xs dark:border-slate-600">
-                        {t('edit')}
-                      </summary>
-                      <div className="absolute right-0 z-20 mt-1 w-32 rounded border border-slate-200 bg-[var(--card-color)] p-1 shadow-lg dark:border-slate-700">
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setEditingId(note.id);
-                            setEditTitle(note.title);
-                            setEditContent(note.content);
-                          }}
-                          className="block w-full rounded px-2 py-1 text-left text-xs hover:bg-slate-100 dark:hover:bg-slate-800"
-                        >
-                          {t('editNote')}
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => {
-                            if (!selectedFolder) return;
-                            onDeleteNote(selectedFolder.id, note.id);
-                          }}
-                          className="block w-full rounded px-2 py-1 text-left text-xs hover:bg-slate-100 dark:hover:bg-slate-800"
-                        >
-                          {t('deleteNote')}
-                        </button>
-                      </div>
-                    </details>
-                  </div>
-                )}
-              </article>
-            );
-          })}
           {selectedFolder.notes.length === 0 ? (
             <p className="text-xs text-slate-500">{t('noNotesInFolder')}</p>
-          ) : null}
-        </div>
+          ) : (
+            <div className="grid gap-3 md:grid-cols-[260px_1fr]">
+              <aside className="space-y-1 rounded-lg border border-slate-200 p-2 dark:border-slate-700">
+                {selectedFolder.notes.map((note) => (
+                  <button
+                    key={note.id}
+                    type="button"
+                    onClick={() => {
+                      setSelectedNoteId(note.id);
+                      setEditingId(null);
+                    }}
+                    className={`w-full rounded-md border px-2 py-1.5 text-left transition ${
+                      selectedNoteId === note.id
+                        ? 'border-[var(--secondary-color)] bg-[var(--secondary-color)]/10'
+                        : 'border-slate-200 hover:bg-slate-100 dark:border-slate-700 dark:hover:bg-slate-800'
+                    }`}
+                  >
+                    <p className="truncate text-sm font-medium text-slate-900 dark:text-slate-100">{note.title}</p>
+                    <p className="truncate text-xs text-slate-500 dark:text-slate-400">{note.content || t('noContent')}</p>
+                  </button>
+                ))}
+              </aside>
+
+              <article className="rounded-lg border border-slate-200 p-3 dark:border-slate-700">
+                {selectedNote ? (
+                  editingId === selectedNote.id ? (
+                    <div className="space-y-2">
+                      <input
+                        value={editTitle}
+                        onChange={(event) => setEditTitle(event.target.value)}
+                        className="w-full rounded border border-slate-300 px-2 py-1.5 text-sm dark:border-slate-600 dark:bg-slate-900"
+                      />
+                      <textarea
+                        value={editContent}
+                        onChange={(event) => setEditContent(event.target.value)}
+                        className="h-36 w-full rounded border border-slate-300 px-2 py-1.5 text-sm dark:border-slate-600 dark:bg-slate-900"
+                      />
+                      <div className="flex justify-end gap-2">
+                        <button
+                          type="button"
+                          onClick={() => setEditingId(null)}
+                          className="rounded border border-slate-300 px-2 py-1 text-xs dark:border-slate-600"
+                        >
+                          {t('cancel')}
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            onUpdateNote(selectedFolder.id, selectedNote.id, { title: editTitle, content: editContent });
+                            setEditingId(null);
+                          }}
+                          className="rounded px-2 py-1 text-xs font-semibold"
+                          style={{ backgroundColor: 'var(--secondary-color)', color: 'var(--on-secondary-color)' }}
+                        >
+                          {t('save')}
+                        </button>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="space-y-3">
+                      <div className="flex items-start justify-between gap-2">
+                        <h4 className="text-lg font-semibold text-slate-900 dark:text-slate-100">{selectedNote.title}</h4>
+                        <details className="relative">
+                          <summary className="cursor-pointer list-none rounded border border-slate-300 px-2 py-1 text-xs dark:border-slate-600">
+                            {t('edit')}
+                          </summary>
+                          <div className="absolute right-0 z-20 mt-1 w-32 rounded border border-slate-200 bg-[var(--card-color)] p-1 shadow-lg dark:border-slate-700">
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setEditingId(selectedNote.id);
+                                setEditTitle(selectedNote.title);
+                                setEditContent(selectedNote.content);
+                              }}
+                              className="block w-full rounded px-2 py-1 text-left text-xs hover:bg-slate-100 dark:hover:bg-slate-800"
+                            >
+                              {t('editNote')}
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => onDeleteNote(selectedFolder.id, selectedNote.id)}
+                              className="block w-full rounded px-2 py-1 text-left text-xs hover:bg-slate-100 dark:hover:bg-slate-800"
+                            >
+                              {t('deleteNote')}
+                            </button>
+                          </div>
+                        </details>
+                      </div>
+                      <p className="whitespace-pre-wrap text-sm text-slate-700 dark:text-slate-300">
+                        {selectedNote.content || t('noContent')}
+                      </p>
+                    </div>
+                  )
+                ) : (
+                  <p className="text-xs text-slate-500">{t('selectFolder')}</p>
+                )}
+              </article>
+            </div>
+          )}
         </section>
       )}
     </div>
@@ -276,3 +319,4 @@ const NotesBoard = ({
 };
 
 export default NotesBoard;
+

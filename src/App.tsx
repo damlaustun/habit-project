@@ -130,7 +130,6 @@ const App = () => {
     setThemeMode,
     setThemeColor,
     setFontFamily,
-    setLanguage,
     setDailyGoal,
     setLockPastWeeks,
     resetAppData,
@@ -175,8 +174,7 @@ const App = () => {
   } = useHabitStore();
 
   const currentWeek = useMemo(() => getCurrentWeek(), [getCurrentWeek, weeklyPlanner]);
-  const t = (key: Parameters<typeof translate>[1], params?: Record<string, string | number>) =>
-    translate(themeSettings.language, key, params);
+  const t = (key: Parameters<typeof translate>[1], params?: Record<string, string | number>) => translate('en', key, params);
   const totalPoints = useMemo(() => getTotalCompletedPoints(currentWeek), [currentWeek]);
   const taskCounts = useMemo(() => getTaskCounts(currentWeek), [currentWeek]);
   const dailyPoints = useMemo(() => getCompletedPointsForDay(currentWeek, getTodayDayId()), [currentWeek]);
@@ -871,14 +869,12 @@ const App = () => {
         themeMode={themeSettings.mode}
         themeColors={themeSettings.colors}
         fontFamily={themeSettings.fontFamily}
-        language={themeSettings.language}
         dailyGoal={habits.dailyGoal}
         lockPastWeeks={habits.lockPastWeeks}
         onClose={() => setSettingsOpen(false)}
         onThemeModeChange={setThemeMode}
         onThemeColorChange={setThemeColor}
         onFontFamilyChange={setFontFamily}
-        onLanguageChange={setLanguage}
         onDailyGoalChange={setDailyGoal}
         onLockPastWeeksChange={setLockPastWeeks}
         onResetApp={handleResetApp}

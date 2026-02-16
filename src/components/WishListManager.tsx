@@ -129,28 +129,37 @@ const WishListManager = ({
 
             {addItemListId === list.id ? (
               <div className="mb-2 grid gap-1.5 rounded border border-slate-200 p-2 dark:border-slate-700">
-                <input
-                  value={itemName}
-                  onChange={(event) => setItemName(event.target.value)}
-                  placeholder={t('itemName')}
-                  className="rounded border border-slate-300 px-2 py-1 text-xs dark:border-slate-600 dark:bg-slate-900"
-                />
-                <input
-                  type="number"
-                  min={0}
-                  value={itemPrice}
-                  onChange={(event) => setItemPrice(Number(event.target.value))}
-                  placeholder={t('priceOptional')}
-                  className="rounded border border-slate-300 px-2 py-1 text-xs dark:border-slate-600 dark:bg-slate-900"
-                />
-                <input
-                  type="number"
-                  min={1}
-                  value={itemQuantity}
-                  onChange={(event) => setItemQuantity(Number(event.target.value))}
-                  placeholder={t('quantity')}
-                  className="rounded border border-slate-300 px-2 py-1 text-xs dark:border-slate-600 dark:bg-slate-900"
-                />
+                <label className="grid gap-1 text-[11px] text-slate-600 dark:text-slate-300">
+                  <span>{t('itemName')}</span>
+                  <input
+                    value={itemName}
+                    onChange={(event) => setItemName(event.target.value)}
+                    placeholder={t('itemName')}
+                    className="rounded border border-slate-300 px-2 py-1 text-xs dark:border-slate-600 dark:bg-slate-900"
+                  />
+                </label>
+                <label className="grid gap-1 text-[11px] text-slate-600 dark:text-slate-300">
+                  <span>{t('howMany')}</span>
+                  <input
+                    type="number"
+                    min={1}
+                    value={itemQuantity}
+                    onChange={(event) => setItemQuantity(Number(event.target.value))}
+                    placeholder={t('quantity')}
+                    className="rounded border border-slate-300 px-2 py-1 text-xs dark:border-slate-600 dark:bg-slate-900"
+                  />
+                </label>
+                <label className="grid gap-1 text-[11px] text-slate-600 dark:text-slate-300">
+                  <span>{t('price')}</span>
+                  <input
+                    type="number"
+                    min={0}
+                    value={itemPrice}
+                    onChange={(event) => setItemPrice(Number(event.target.value))}
+                    placeholder={t('priceOptional')}
+                    className="rounded border border-slate-300 px-2 py-1 text-xs dark:border-slate-600 dark:bg-slate-900"
+                  />
+                </label>
                 <div className="flex justify-end gap-1.5">
                   <button
                     type="button"

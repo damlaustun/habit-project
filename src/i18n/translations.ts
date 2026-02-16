@@ -42,7 +42,9 @@ export type I18nKey =
   | 'addItem'
   | 'itemName'
   | 'priceOptional'
+  | 'price'
   | 'quantity'
+  | 'howMany'
   | 'cancel'
   | 'save'
   | 'noItems'
@@ -61,6 +63,7 @@ export type I18nKey =
   | 'editNote'
   | 'deleteNote'
   | 'noNotesInFolder'
+  | 'noContent'
   | 'english'
   | 'turkish'
   | 'spanish'
@@ -109,7 +112,9 @@ const messages: Record<LanguageOption, Record<I18nKey, string>> = {
     addItem: 'Add',
     itemName: 'Item name',
     priceOptional: 'Price (optional)',
+    price: 'Price',
     quantity: 'Quantity',
+    howMany: 'How many?',
     cancel: 'Cancel',
     save: 'Save',
     noItems: 'No items.',
@@ -128,6 +133,7 @@ const messages: Record<LanguageOption, Record<I18nKey, string>> = {
     editNote: 'Edit note',
     deleteNote: 'Delete note',
     noNotesInFolder: 'No notes in this folder yet.',
+    noContent: 'No content',
     english: 'English',
     turkish: 'Turkish',
     spanish: 'Spanish',
@@ -175,7 +181,9 @@ const messages: Record<LanguageOption, Record<I18nKey, string>> = {
     addItem: 'Ekle',
     itemName: 'Ürün adı',
     priceOptional: 'Fiyat (opsiyonel)',
+    price: 'Fiyat',
     quantity: 'Adet',
+    howMany: 'Kaç tane?',
     cancel: 'İptal',
     save: 'Kaydet',
     noItems: 'Öğe yok.',
@@ -194,6 +202,7 @@ const messages: Record<LanguageOption, Record<I18nKey, string>> = {
     editNote: 'Notu düzenle',
     deleteNote: 'Notu sil',
     noNotesInFolder: 'Bu klasörde henüz not yok.',
+    noContent: 'İçerik yok',
     english: 'İngilizce',
     turkish: 'Türkçe',
     spanish: 'İspanyolca',
@@ -241,7 +250,9 @@ const messages: Record<LanguageOption, Record<I18nKey, string>> = {
     addItem: 'Agregar',
     itemName: 'Nombre del artículo',
     priceOptional: 'Precio (opcional)',
+    price: 'Precio',
     quantity: 'Cantidad',
+    howMany: '¿Cuántos?',
     cancel: 'Cancelar',
     save: 'Guardar',
     noItems: 'Sin artículos.',
@@ -260,6 +271,7 @@ const messages: Record<LanguageOption, Record<I18nKey, string>> = {
     editNote: 'Editar nota',
     deleteNote: 'Eliminar nota',
     noNotesInFolder: 'No hay notas en esta carpeta.',
+    noContent: 'Sin contenido',
     english: 'Inglés',
     turkish: 'Turco',
     spanish: 'Español',
@@ -307,7 +319,9 @@ const messages: Record<LanguageOption, Record<I18nKey, string>> = {
     addItem: 'Ajouter',
     itemName: 'Nom de l’élément',
     priceOptional: 'Prix (optionnel)',
+    price: 'Prix',
     quantity: 'Quantité',
+    howMany: 'Combien ?',
     cancel: 'Annuler',
     save: 'Enregistrer',
     noItems: 'Aucun élément.',
@@ -326,6 +340,7 @@ const messages: Record<LanguageOption, Record<I18nKey, string>> = {
     editNote: 'Modifier la note',
     deleteNote: 'Supprimer la note',
     noNotesInFolder: 'Aucune note dans ce dossier.',
+    noContent: 'Pas de contenu',
     english: 'Anglais',
     turkish: 'Turc',
     spanish: 'Espagnol',
